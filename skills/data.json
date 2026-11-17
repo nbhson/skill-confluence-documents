@@ -1,0 +1,1733 @@
+{
+  "meta": {
+    "version": "1.0",
+    "language": "en",
+    "totalSkills": 12,
+    "target": "Atlassian Cloud Confluence storage format",
+    "api": "Confluence Cloud REST API v2 + v1",
+    "tokenPrefix": "--doc-*",
+    "profiles": [
+      "adr",
+      "api",
+      "fds",
+      "fds-vi",
+      "generic",
+      "postmortem",
+      "release",
+      "rfc",
+      "runbook"
+    ],
+    "scripts": {
+      "convert": "scripts/md2storage.py",
+      "publish": "scripts/confluence.py",
+      "lint": "scripts/validate_document.py",
+      "repoCheck": "scripts/validate_skills.py"
+    }
+  },
+  "skills": [
+    {
+      "id": "document-architecture",
+      "number": 1,
+      "name": "Document Architecture",
+      "folder": "01-document-architecture",
+      "summary": "Page anatomy for enterprise Confluence documents — title formula, document control block, TOC, numbered sections, appendices and the 30-second comprehension test.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Document architecture is the fixed skeleton every page inherits: a predictable title, a document control block, a table of contents, numbered sections in a stable order, and appendices for depth. Readers should know where they are, what the document is worth, and how current it is within thirty seconds. Architecture is not decoration; it is how a reviewer finds the one section they must approve without reading everything else.",
+        "principles": [
+          "**Title states type and scope:** `{Feature} — Functional Design Specification`, not `FDS new final v2`.",
+          "**Control before content:** document ID, version, status, owner, reviewers, Jira key and last-updated date appear before the first section.",
+          "**One page, one purpose:** a page is an FDS or an API spec or a runbook — never a mixed notebook.",
+          "**Numbered, shallow sections:** six to twelve H2 sections, numbered `1..n`, depth three at most.",
+          "**Answer first:** each section opens with one or two sentences stating the conclusion, then the evidence.",
+          "**Depth belongs in appendices:** glossary, references and long tables move to `Appendix A/B`, linked from the body.",
+          "**Stable anchors:** sections referenced from Jira or code carry an explicit anchor such as `{#fr-001}`.",
+          "**Version history is the archive:** never create `page-v2`; update the page and record the change."
+        ],
+        "tokens": [
+          {
+            "role": "Page title",
+            "token": "--doc-title-format",
+            "value": "{Feature} — {Document type}",
+            "notes": "Sentence case after the dash"
+          },
+          {
+            "role": "Control fields",
+            "token": "--doc-control-fields",
+            "value": "doc_id, version, status, owner, reviewers, jira, updated",
+            "notes": "Frontmatter renders the table"
+          },
+          {
+            "role": "TOC threshold",
+            "token": "--doc-toc-min-sections",
+            "value": "6",
+            "notes": "Add {{toc}} at or above this count"
+          },
+          {
+            "role": "Section count",
+            "token": "--doc-section-count",
+            "value": "6–12",
+            "notes": "Split or group outside this range"
+          },
+          {
+            "role": "Section depth",
+            "token": "--doc-max-depth",
+            "value": "3",
+            "notes": "H4 only for detail under a requirement"
+          },
+          {
+            "role": "Section numbering",
+            "token": "--doc-numbering",
+            "value": "1..n",
+            "notes": "Appendices use letters"
+          },
+          {
+            "role": "Status vocabulary",
+            "token": "--doc-status-vocab",
+            "value": "Draft, In Review, Approved, Deprecated, Superseded",
+            "notes": "Controlled values only"
+          },
+          {
+            "role": "Change log position",
+            "token": "--doc-changelog-position",
+            "value": "last",
+            "notes": "Before appendices"
+          },
+          {
+            "role": "Page budget",
+            "token": "--doc-storage-budget",
+            "value": "1 MB",
+            "notes": "Move exports to attachments"
+          }
+        ],
+        "composition": [
+          "**With visual-hierarchy (guide 03):** architecture decides the order; visual hierarchy decides the container — paragraph, table, panel or expand.",
+          "**With fds-requirements (guide 02):** the FDS section order is a specialization of this skeleton; requirement IDs and acceptance criteria plug into sections 4 and 10.",
+          "**With review-governance (guide 10):** the control block and change log are the audit surface reviewers sign.",
+          "**With update-versioning (guide 08):** the change log is written by the update protocol, not by hand at the end."
+        ],
+        "patterns": [
+          "**Canonical skeleton:** control table → TOC → scope → requirements → constraints → data/API → flows → acceptance → risks → change log → appendices.",
+          "**30-second test:** a reader can answer *what is this, who owns it, is it approved, what changed last* from the first screen.",
+          "**Answer-first section:** a lede sentence, then one table or panel, then exceptions in an expand.",
+          "**Appendix split:** when a section passes 150 lines, move reference material to an appendix and link the anchor."
+        ],
+        "useCases": [
+          "**New FDS for a regulated payment flow** — the control block and numbered sections let Risk and Compliance cite exact clauses.",
+          "**Legacy page retrofit** — add frontmatter, TOC and numbering first, then move long appendices without rewriting the content.",
+          "**Microservice documentation set** — one page per service using the same skeleton, with child pages for deep API schemas."
+        ],
+        "combinations": {
+          "good": [
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**No document control block** — version, owner and status live only in Slack",
+          "**One page per revision** — `FDS v2 final` pages fork the truth",
+          "**Twenty H2 sections with no grouping** — readers cannot hold the structure in mind",
+          "**TOC used as the only navigation** — sections lack headings or anchors",
+          "**Appendix content mixed into the main narrative** — reference tables interrupt the decision path"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Heading levels are the screen-reader outline. One H1 (the page title), H2 for sections, H3 for sub-sections, no skipped levels. Anchor names must be meaningful (`refund-approval`, not `section-7`). A TOC is a navigation aid, not a substitute for descriptive headings.",
+          "fallback": "If a section cannot fit the depth budget, split the page or move detail to an appendix rather than hiding it in unlabelled bold text."
+        }
+      }
+    },
+    {
+      "id": "fds-requirements",
+      "number": 2,
+      "name": "FDS and Requirements",
+      "folder": "02-fds-requirements",
+      "summary": "Functional design specification and requirement modelling — atomic requirements, FR/NFR/BR/AC identifier schemes, MoSCoW priority, Given-When-Then acceptance criteria and end-to-end traceability.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc"
+      ],
+      "sections": {
+        "definition": "A Functional Design Specification states what a system must do, for whom, under which rules, and how acceptance will be proven. The unit of writing is the requirement: one observable outcome, one identifier, one owner, one source issue and at least one testable acceptance criterion. The FDS is the contract between Product, Engineering, QA and Operations; if two teams can read it and disagree about what \"done\" means, the requirement is unfinished.",
+        "principles": [
+          "**Atomic:** one requirement, one outcome. If the sentence contains \"and\", split it or make the second clause a business rule.",
+          "**Testable:** every requirement maps to at least one acceptance criterion with a concrete input and observable output.",
+          "**Identified:** `FR-001`, `NFR-001`, `BR-001`, `AC-001` — IDs are stable and never reused.",
+          "**Sourced:** every requirement names the Jira key that authorises it and the stakeholder who asked.",
+          "**Outcome over implementation:** say what must be true, not which class or table to create.",
+          "**Quantified NFRs:** \"fast\" is not a target; \"p95 under 400 ms at 300 rps\" is.",
+          "**Traceable:** requirement → Jira → acceptance criterion → test evidence is one unbroken chain.",
+          "**Change-controlled:** scope changes update the requirement row, the change log and the Jira issue together."
+        ],
+        "tokens": [
+          {
+            "role": "Requirement ID",
+            "token": "--req-id-format",
+            "value": "FR-NNN, NFR-NNN, BR-NNN, AC-NNN",
+            "notes": "Three digits, never reused"
+          },
+          {
+            "role": "Priority",
+            "token": "--req-priority",
+            "value": "Must, Should, Could, Won't",
+            "notes": "MoSCoW, one value per row"
+          },
+          {
+            "role": "FR columns",
+            "token": "--req-fr-columns",
+            "value": "ID, Requirement, Priority, Jira, Status",
+            "notes": "Jira column is mandatory"
+          },
+          {
+            "role": "AC format",
+            "token": "--req-ac-format",
+            "value": "Given, When, Then",
+            "notes": "One scenario per row"
+          },
+          {
+            "role": "Requirement length",
+            "token": "--req-max-words",
+            "value": "60",
+            "notes": "Longer means split or move detail"
+          },
+          {
+            "role": "NFR target",
+            "token": "--req-nfr-target",
+            "value": "numeric + unit + measurement",
+            "notes": "No unmeasured adjectives"
+          },
+          {
+            "role": "Traceability",
+            "token": "--req-traceability",
+            "value": "FR → AC → Jira",
+            "notes": "Every FR referenced by an AC"
+          },
+          {
+            "role": "Status vocabulary",
+            "token": "--req-status-vocab",
+            "value": "Draft, In Review, Approved, Deprecated",
+            "notes": "Mirrors the page status"
+          },
+          {
+            "role": "Change rule",
+            "token": "--req-change-control",
+            "value": "row + changelog + Jira",
+            "notes": "Three updates, one change"
+          }
+        ],
+        "composition": [
+          "**With tables-matrices (guide 05):** the requirement index, acceptance matrix, decision log and risk register are tables, not bullet lists.",
+          "**With jira-traceability (guide 07):** the Jira column and remote links connect the contract to delivery.",
+          "**With api-contracts (guide 09):** API behaviour is referenced from FRs rather than duplicated; schemas live in the API section.",
+          "**With review-governance (guide 10):** status transitions apply to each requirement row, not only to the page."
+        ],
+        "patterns": [
+          "**Requirement index + detail:** a summary table for scanning, then one H3 per requirement only where attributes and edge cases need space.",
+          "**Given-When-Then acceptance table:** one row per scenario, one AC ID per row, explicit expected result.",
+          "**Business-rule table:** rule, enforcement point, error code, Jira — the bridge between requirement and API.",
+          "**Traceability matrix:** FR, AC, Jira, test evidence, status; the source for release readiness.",
+          "**Open-question register:** ID, question, owner, needed-by date, status; unresolved questions block approval."
+        ],
+        "useCases": [
+          "**Payment or refund flow** — money movement requires atomic rules, idempotency and auditable approval thresholds.",
+          "**Regulated onboarding** — each KYC step is a requirement with a compliance source and evidence.",
+          "**Platform migration** — parity requirements compare old and new behaviour, with explicit exceptions.",
+          "**Internal tooling** — even a small admin tool needs acceptance criteria; \"it works\" is not a release gate."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [
+            "api-contracts"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Requirements written as bullets with no ID or source** — impossible to trace, test or approve",
+          "**Bundled requirements joined by 'and'** — cannot be tested independently or prioritised separately",
+          "**Non-functional targets without a number or measurement method** — \"fast\" and \"secure\" are not acceptance criteria",
+          "**Acceptance criteria that merely restate the requirement** — no new observable evidence",
+          "**Implementation details presented as requirements** — the design is frozen before review"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Write requirements in plain language and define acronyms on first use. A requirement that a screen-reader user cannot understand is not testable by the whole team. For UI requirements, acceptance criteria must include keyboard, focus and announcement behaviour, not only pointer interaction.",
+          "fallback": "If a requirement cannot be made testable in plain language, state the outcome and the measurement method, then add examples; do not ship an untestable adjective."
+        }
+      }
+    },
+    {
+      "id": "visual-hierarchy",
+      "number": 3,
+      "name": "Visual Hierarchy and Formatting",
+      "folder": "03-visual-hierarchy",
+      "summary": "Enterprise formatting system for Confluence — answer-first sections, tables over bullet walls, panels, status lozenges, expandable depth, scannable density and the bullet-ratio budget.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Visual hierarchy is the deliberate use of paragraphs, tables, panels, status lozenges and headings to tell the reader what matters first. Enterprise formatting is not \"more decoration\"; it is fewer, stronger containers. A page with twelve bullet lists has no hierarchy — everything is equally unimportant. A page with one answer-first paragraph, one comparison table and one decision panel can be approved in two minutes.",
+        "principles": [
+          "**Answer first, evidence second:** open each section with one or two sentences stating the conclusion.",
+          "**Table when parallel, prose when causal:** three or more comparable facts become a table; a chain of reasoning stays a paragraph.",
+          "**Bullets are the exception:** use them for short sequences, never as the default container for requirements, risks or options.",
+          "**One callout per decision:** a panel marks a decision, warning or constraint; if every paragraph is in a panel, none stands out.",
+          "**Status is text plus colour:** `{{status:green|Approved}}`, never a green cell without a label.",
+          "**Depth is collapsible:** long evidence moves into `:::expand`, keeping the main path short.",
+          "**Whitespace is structure:** one idea per section; split before the page becomes a scroll marathon.",
+          "**Format follows content:** do not use a table as page layout or a heading as font size."
+        ],
+        "tokens": [
+          {
+            "role": "Bullet budget",
+            "token": "--doc-bullet-ratio",
+            "value": "≤ 35%",
+            "notes": "Share of prose lines that are bullets"
+          },
+          {
+            "role": "Bullet run",
+            "token": "--doc-bullet-run",
+            "value": "≤ 8",
+            "notes": "Consecutive bullet lines before a break"
+          },
+          {
+            "role": "Bullet depth",
+            "token": "--doc-bullet-depth",
+            "value": "2",
+            "notes": "Third level requires a table instead"
+          },
+          {
+            "role": "Table threshold",
+            "token": "--doc-table-threshold",
+            "value": "3",
+            "notes": "Parallel items at or above this become a table"
+          },
+          {
+            "role": "Paragraph budget",
+            "token": "--doc-paragraph-words",
+            "value": "180",
+            "notes": "Longer paragraphs split or move to an expand"
+          },
+          {
+            "role": "Section lede",
+            "token": "--doc-section-lede",
+            "value": "1–2 sentences",
+            "notes": "Before any list or table"
+          },
+          {
+            "role": "Callout budget",
+            "token": "--doc-callout-budget",
+            "value": "1 per section",
+            "notes": "More than one competes for attention"
+          },
+          {
+            "role": "Status colours",
+            "token": "--doc-status-colours",
+            "value": "Grey, Yellow, Green, Red, Purple",
+            "notes": "Text label is mandatory"
+          },
+          {
+            "role": "Code language",
+            "token": "--doc-code-language",
+            "value": "required",
+            "notes": "Enables syntax highlighting"
+          },
+          {
+            "role": "Table columns",
+            "token": "--doc-table-columns",
+            "value": "≤ 8",
+            "notes": "Ten is the hard ceiling"
+          }
+        ],
+        "composition": [
+          "**With document-architecture (guide 01):** architecture defines section order; hierarchy chooses the container inside each section.",
+          "**With tables-matrices (guide 05):** the table is the workhorse container; this guide sets the budget, that guide sets the columns.",
+          "**With readability-accessibility (guide 11):** visual contrast must survive greyscale, zoom and screen readers.",
+          "**With storage-format (guide 04):** every container maps to a supported macro; do not invent styling the editor will strip."
+        ],
+        "patterns": [
+          "**Answer-first section:** lede paragraph → one table → exception panel → optional expand.",
+          "**Decision panel:** `:::info` with the decision, owner and deadline; the body links to the evidence.",
+          "**Risk table:** ID, risk, likelihood, impact, mitigation, owner, status — never a bulleted risk list.",
+          "**Do/Don't table:** two columns, one behaviour per row; the fastest way to remove ambiguity.",
+          "**Progressive disclosure:** summary table in the body, full schema or test evidence in `:::expand`.",
+          "**Before/after table:** legacy behaviour versus new behaviour, with a verification column."
+        ],
+        "useCases": [
+          "**FDS review** — reviewers scan the requirement table, open one detail section, and sign the change log.",
+          "**Incident postmortem** — the timeline table carries the evidence; the summary panel carries the conclusion.",
+          "**API change notice** — breaking changes in a table with impact and required action, not a wall of bullets.",
+          "**Runbook** — numbered procedure plus decision table; bullets only for short checklists."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Bullet wall where every section is a flat list** — no hierarchy, no prioritisation, no narrative",
+          "**Bold, caps and colour used together for emphasis** — three signals for one meaning, none trusted",
+          "**Rainbow status colours with no legend or text** — meaning lost in greyscale and for colour-blind readers",
+          "**Four levels of nested bullets** — the reader cannot reconstruct the hierarchy",
+          "**Tables used as page layout rather than data** — breaks reflow, zoom and screen readers",
+          "**Screenshots of text instead of selectable content** — unsearchable, untranslatable, inaccessible"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Never rely on colour alone: the status macro includes a text label. Body text must meet 4.5:1 contrast; headings are real heading elements, not bold paragraphs. Tables need a header row so screen readers announce column names. Expand macros hide content from search results in some configurations — never put mandatory acceptance criteria only inside an expand.",
+          "fallback": "If a container cannot express the relationship, fall back to a table with a header row; never rely on colour or position alone."
+        }
+      }
+    },
+    {
+      "id": "storage-format",
+      "number": 4,
+      "name": "Storage Format",
+      "folder": "04-storage-format",
+      "summary": "Confluence Cloud storage XHTML — the safe tag subset, macro anatomy, escaping, CDATA, images, anchors and the raw-storage escape hatch.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Confluence stores page bodies as *storage format*: an XHTML fragment with `ac:` macros and `ri:` resource identifiers. The REST API accepts and returns this representation, and the editor round-trips it. A document is safe to publish when every tag is well formed, every macro is allowlisted, every attribute is escaped, and the fragment survives a parse. Anything else becomes broken layout, literal text or a page the editor silently rewrites.",
+        "principles": [
+          "**Emit a conservative subset:** headings, paragraphs, lists, tables, links, images and the macros in section 3 — nothing else.",
+          "**Well-formed before publish:** every element closes; every `&` is `&amp;`; every attribute quote is balanced.",
+          "**No executable content:** no `<script>`, `<style>`, `<iframe>`, event handlers or `javascript:` links.",
+          "**CDATA for code:** macro bodies that contain `<`, `>` or `&` use `ac:plain-text-body` with CDATA, splitting `]]>` safely.",
+          "**Rich text for prose:** panels and expands wrap prose in `ac:rich-text-body`.",
+          "**Images are attachments:** reference `ri:attachment` by filename; never inline base64.",
+          "**One source of truth:** generate storage from Markdown; hand-editing live storage is a review exception, not the workflow.",
+          "**Fail closed:** unknown macros abort conversion unless `--lenient` is explicit."
+        ],
+        "tokens": [
+          {
+            "role": "Allowed block tags",
+            "token": "--storage-block-tags",
+            "value": "h1–h6, p, ul, ol, li, table, thead, tbody, tr, th, td, blockquote, hr, pre",
+            "notes": "No div/span styling"
+          },
+          {
+            "role": "Allowed inline tags",
+            "token": "--storage-inline-tags",
+            "value": "strong, em, del, code, a, br",
+            "notes": "No font/size tags"
+          },
+          {
+            "role": "Macro allowlist",
+            "token": "--storage-macros",
+            "value": "info, note, tip, warning, panel, expand, status, jira, toc, anchor, code, children, include",
+            "notes": "Confirm tenant-specific apps"
+          },
+          {
+            "role": "Page budget",
+            "token": "--storage-page-budget",
+            "value": "1 MB",
+            "notes": "Hard warning above 2 MB"
+          },
+          {
+            "role": "Macro count",
+            "token": "--storage-macro-budget",
+            "value": "500",
+            "notes": "Split the page above this"
+          },
+          {
+            "role": "Table rows",
+            "token": "--storage-table-rows",
+            "value": "500",
+            "notes": "Move exports to attachments"
+          },
+          {
+            "role": "Escaping",
+            "token": "--storage-escape",
+            "value": "& < > \"",
+            "notes": "Attributes use &quot;"
+          },
+          {
+            "role": "Raw escape hatch",
+            "token": "--storage-raw-fence",
+            "value": "storage",
+            "notes": "Reviewed like code"
+          },
+          {
+            "role": "Namespaces",
+            "token": "--storage-namespaces",
+            "value": "ac, ri",
+            "notes": "Declared by Confluence"
+          }
+        ],
+        "composition": [
+          "**With visual-hierarchy (guide 03):** every container in that guide maps to one macro here; choose containers before writing storage.",
+          "**With tables-matrices (guide 05):** tables are plain XHTML with `<th>` headers, not macros.",
+          "**With diagrams (guide 06):** diagram macros are app-specific; confirm the macro name before relying on it.",
+          "**With automation-quality (guide 12):** conversion and well-formedness checks belong in CI, not in a reviewer's browser."
+        ],
+        "patterns": [
+          "**Macro anatomy:** `ac:structured-macro` + named parameters + one body type (`ac:rich-text-body` or `ac:plain-text-body`).",
+          "**Status lozenge:** colour parameter plus title parameter; text is the meaning.",
+          "**Panel:** optional title, rich-text body, no custom colours (theme handles dark mode).",
+          "**Expand:** optional title, rich-text body; detail only, never mandatory criteria.",
+          "**Code block:** language parameter plus `ac:plain-text-body` in CDATA.",
+          "**Anchor:** unnamed parameter carrying the anchor slug, placed inside the heading.",
+          "**Attachment image:** `ac:image` with `ac:alt` and `ri:attachment ri:filename`."
+        ],
+        "useCases": [
+          "**API-generated release notes** — deterministic storage from a template, validated before every publish.",
+          "**Migration from another wiki** — convert to the allowlisted subset instead of pasting exported HTML.",
+          "**Agent-authored updates** — fetch storage, replace one section, validate and push with a version message.",
+          "**Audit of legacy pages** — scan for scripts, iframes, base64 images and unknown macros before a space migration."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "tables-matrices",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [
+            "diagrams"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Unclosed or misspelled ac:structured-macro tags** — the page renders literal XML or loses the body",
+          "**Raw HTML copied from Word or Google Docs** — font, span and style noise the editor strips unpredictably",
+          "**Script, style or iframe tags pasted into storage** — a security and rendering hazard",
+          "**Base64 images embedded in the page body** — bloats the page and breaks caching",
+          "**Unknown macros published as literal text** — readers see `{{status:...}}` instead of a status"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Storage must carry semantics, not styling: real `<h2>`/`<h3>` elements, `<th>` for table headers, `ac:alt` on every image, descriptive link text. A `<span style=\"font-weight:bold\">` looks like a heading to sighted readers and is invisible to assistive technology. CDATA code blocks need a language parameter so screen readers and highlighters can treat them consistently.",
+          "fallback": "If the tenant lacks a macro, publish the semantic equivalent (a table or plain text) instead of literal macro syntax."
+        }
+      }
+    },
+    {
+      "id": "tables-matrices",
+      "number": 5,
+      "name": "Tables and Matrices",
+      "folder": "05-tables-matrices",
+      "summary": "Table design for specifications — requirement indexes, decision logs, risk registers, RACI, error codes and traceability matrices with column budgets and accessibility-safe structure.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "A table is a comparison instrument: one entity per row, one attribute per column, and a header that tells the reader what can be compared. Matrices extend the idea to relationships — requirement to test, risk to owner, decision to date. The moment a table stops comparing and starts laying out the page, it becomes a liability for reflow, zoom and screen readers.",
+        "principles": [
+          "**One entity per row:** a requirement, a risk, a decision or an endpoint — never two kinds in one table.",
+          "**ID first:** the first column is a stable identifier so reviews can cite `BR-004` or `AC-002`.",
+          "**Decision-useful columns:** every column answers a question a reviewer will ask; delete decorative columns.",
+          "**Units in the header:** `Latency (ms)`, not a number with a footnote.",
+          "**No merged cells:** merging breaks sorting, copy-paste and screen-reader navigation.",
+          "**Explicit empty state:** use an em dash, never a blank cell that looks unfinished.",
+          "**Short cells:** a table cell is a label or a value, not a paragraph; move prose above the table.",
+          "**Eight columns is the budget:** ten is the hard ceiling; split rather than scroll."
+        ],
+        "tokens": [
+          {
+            "role": "Minimum rows",
+            "token": "--table-min-rows",
+            "value": "3",
+            "notes": "Below three, use prose or a short list"
+          },
+          {
+            "role": "Column budget",
+            "token": "--table-columns",
+            "value": "≤ 8",
+            "notes": "Hard ceiling of 10"
+          },
+          {
+            "role": "Header row",
+            "token": "--table-header",
+            "value": "mandatory",
+            "notes": "<th> in storage"
+          },
+          {
+            "role": "Identifier column",
+            "token": "--table-id-column",
+            "value": "first",
+            "notes": "Stable IDs, never reused"
+          },
+          {
+            "role": "Cell budget",
+            "token": "--table-cell-words",
+            "value": "40",
+            "notes": "Longer text becomes prose"
+          },
+          {
+            "role": "Empty cell",
+            "token": "--table-empty",
+            "value": "—",
+            "notes": "Explicit, not blank"
+          },
+          {
+            "role": "Units",
+            "token": "--table-units",
+            "value": "in header",
+            "notes": "Amount (VND), Latency (ms)"
+          },
+          {
+            "role": "Status column",
+            "token": "--table-status-column",
+            "value": "last or second-last",
+            "notes": "Text plus colour"
+          },
+          {
+            "role": "Merge policy",
+            "token": "--table-merge",
+            "value": "forbidden",
+            "notes": "Use repeated values instead"
+          }
+        ],
+        "composition": [
+          "**With fds-requirements (guide 02):** the requirement index, AC matrix and open-question register are the canonical tables.",
+          "**With visual-hierarchy (guide 03):** tables are the default container for three or more parallel facts.",
+          "**With jira-traceability (guide 07):** the Jira column is the join key between Confluence and delivery.",
+          "**With readability-accessibility (guide 11):** headers, cell length and no-merge rules are accessibility contracts."
+        ],
+        "patterns": [
+          "**Requirement index:** ID, requirement, priority, Jira, status.",
+          "**Decision log:** ID, date, decision, rationale, owner, status.",
+          "**Risk register:** ID, risk, likelihood, impact, mitigation, owner, status.",
+          "**Open questions:** ID, question, owner, needed by, status.",
+          "**RACI:** role, name, responsibility, R/A/C/I.",
+          "**Error catalogue:** code, HTTP, meaning, retry, user message.",
+          "**Traceability matrix:** FR, AC, Jira, test evidence, release.",
+          "**Do/Don't:** behaviour, do, don't, reason."
+        ],
+        "useCases": [
+          "**Release readiness review** — the FR → AC → evidence matrix is the agenda; empty evidence cells block the release.",
+          "**Architecture decision record** — options, consequences and revisit triggers in one comparison table.",
+          "**Incident postmortem** — timeline and action items are tables; the narrative stays in paragraphs.",
+          "**Compliance evidence** — control, owner, evidence link, last verified date."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [
+            "diagrams"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Bullet list pretending to be a comparison table** — the reader cannot align attributes across items",
+          "**Twelve-column table that requires horizontal scrolling** — the last columns are never read",
+          "**Merged cells that break sorting and screen readers** — repeated values are cheaper than merges",
+          "**Empty cells instead of an explicit em dash** — blanks look like missing work, not \"not applicable\"",
+          "**Status conveyed only by cell colour** — invisible in greyscale and to colour-blind readers"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Every table needs a header row; screen readers announce column names from `<th>`. Avoid merged cells and nested tables. Keep cell text short so zoom does not force horizontal scrolling. If a table exceeds ten columns, split it into a summary table and a detail table with a shared ID column.",
+          "fallback": "If the table exceeds the column budget, split it by ID; never merge cells or remove the header row."
+        }
+      }
+    },
+    {
+      "id": "diagrams",
+      "number": 6,
+      "name": "Diagrams and Visuals",
+      "folder": "06-diagrams",
+      "summary": "Diagram direction for specifications — C4, sequence, state and ER diagrams, Mermaid and PlantUML sources, captions, alt text and the diagram-versus-table decision.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "postmortem"
+      ],
+      "sections": {
+        "definition": "A diagram is a compressed argument about structure or behaviour: who calls whom, which state follows which, how entities relate. It earns its space when a table or paragraph cannot express the relationship as quickly. The source must live with the page, the caption must state the conclusion, and the alt text must describe that conclusion for readers who cannot see it.",
+        "principles": [
+          "**One message per diagram:** topology, sequence, state or relationship — not all four at once.",
+          "**Diagram for relationships, table for rules:** if the content is a list of conditions with values, use a table.",
+          "**Label every edge:** an unlabelled arrow is a guess; name the call, event or transition.",
+          "**Consistent notation:** C4 for architecture, UML sequence for interactions, state machine for lifecycle, crow's foot for ER.",
+          "**Source is part of the document:** keep Mermaid/PlantUML text or the draw.io source attachment; a PNG alone cannot be reviewed.",
+          "**Caption states the takeaway:** `Figure 1 — Refund moves from pending to succeeded only after the card adapter confirms.`",
+          "**Alt text is mandatory:** describe what the diagram shows and the conclusion, not \"diagram.png\".",
+          "**Version the diagram with the page:** a changed flow needs a new version and a change-log row."
+        ],
+        "tokens": [
+          {
+            "role": "Diagram types",
+            "token": "--diagram-types",
+            "value": "C4, sequence, state, ER, flowchart",
+            "notes": "Match the question, not fashion"
+          },
+          {
+            "role": "Node budget",
+            "token": "--diagram-max-nodes",
+            "value": "15",
+            "notes": "Above this, split into views"
+          },
+          {
+            "role": "Edge budget",
+            "token": "--diagram-max-edges",
+            "value": "20",
+            "notes": "Hairballs hide the failure path"
+          },
+          {
+            "role": "Alt text",
+            "token": "--diagram-alt",
+            "value": "required",
+            "notes": "8–20 words stating the conclusion"
+          },
+          {
+            "role": "Caption",
+            "token": "--diagram-caption",
+            "value": "Figure N — {takeaway}",
+            "notes": "Numbered in reading order"
+          },
+          {
+            "role": "Colour count",
+            "token": "--diagram-colours",
+            "value": "≤ 4",
+            "notes": "Redundant with labels"
+          },
+          {
+            "role": "Source format",
+            "token": "--diagram-source",
+            "value": "Mermaid or PlantUML text",
+            "notes": "PNG is an export, not the source"
+          },
+          {
+            "role": "Export density",
+            "token": "--diagram-export",
+            "value": "2x PNG",
+            "notes": "For readers without the macro"
+          },
+          {
+            "role": "Direction",
+            "token": "--diagram-direction",
+            "value": "left-to-right or top-down",
+            "notes": "Consistent within a page"
+          }
+        ],
+        "composition": [
+          "**With storage-format (guide 04):** the macro name depends on the installed app; confirm `mermaid` or `plantuml` in the tenant.",
+          "**With visual-hierarchy (guide 03):** a diagram is a visual container like a table; introduce it with a lede and caption it.",
+          "**With readability-accessibility (guide 11):** alt text and long description are not optional.",
+          "**With api-contracts (guide 09):** sequence diagrams complement the endpoint table; the table remains normative."
+        ],
+        "patterns": [
+          "**Context diagram:** the system in the middle, external actors and systems around it, labelled protocols.",
+          "**Sequence diagram:** happy path first, then one diagram for the failure path; avoid mixing ten scenarios.",
+          "**State machine:** states as nouns, transitions as verbs, guards on the edge label.",
+          "**ER diagram:** entities and cardinality only; field detail belongs in the schema table.",
+          "**Diagram + explanation table:** image on top, \"element / responsibility / owner\" table below.",
+          "**Before/after pair:** two small diagrams are clearer than one diagram with a legend of dashed lines."
+        ],
+        "useCases": [
+          "**Refund lifecycle** — a state machine prevents arguments about when `succeeded` is allowed.",
+          "**Incident data flow** — a sequence diagram shows where the timeout occurred and which retry fired.",
+          "**Service topology** — a C4 context diagram names the owners of each boundary.",
+          "**Data migration** — an ER diagram plus a field mapping table proves parity."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [
+            "storage-format",
+            "tables-matrices"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Screenshot-only diagram with no source or alt text** — cannot be edited, reviewed or described",
+          "**Unlabelled arrows that leave the flow ambiguous** — the reader invents the contract",
+          "**Hairball diagram with 40 nodes and no grouping** — proves complexity, not understanding",
+          "**Decorative stock images in a specification** — consumes attention without evidence",
+          "**Diagram that contradicts the written contract** — two sources of truth, one of them wrong"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Alt text should state the conclusion: \"Refund stays pending until the card adapter confirms, then moves to succeeded.\" For complex diagrams, add a long description in the paragraph below or an expand with the step sequence. Never use colour alone to distinguish success from failure; label edges and states. If the diagram is only available as an image, provide the same information as a table.",
+          "fallback": "If the diagram cannot be described in alt text, provide a text-equivalent table with the same states and transitions."
+        }
+      }
+    },
+    {
+      "id": "jira-traceability",
+      "number": 7,
+      "name": "Jira Traceability",
+      "folder": "07-jira-traceability",
+      "summary": "Linking Confluence specifications to Jira — issue keys in tables, Jira macros, remote links, two-way traceability, status drift and the label taxonomy.",
+      "documentTypes": [
+        "fds",
+        "rfc",
+        "release",
+        "postmortem"
+      ],
+      "sections": {
+        "definition": "Traceability is the ability to walk from a requirement in Confluence to the Jira issue that authorises it, and from a Jira issue to the page that specifies it. It is a property of the link graph, not a paragraph that mentions a ticket number. Every requirement row carries a key, every published page carries a remote link, and status is read live from Jira rather than copied into prose.",
+        "principles": [
+          "**Every requirement has a source issue:** the Jira column is mandatory, not decorative.",
+          "**Link both directions:** the page links to the issue; the issue has a web link back to the page.",
+          "**Key in the table, status live:** use `{{jira:KEY}}` or the Jira column; do not paste a status that will be stale tomorrow.",
+          "**Epic is not enough:** epic-level links give scope; story-level rows give traceability.",
+          "**One issue can cover many requirements:** do not invent a ticket per row; map many-to-one explicitly.",
+          "**Labels are a controlled taxonomy:** `fds`, `api`, `rfc`, `runbook`, `approved`, `deprecated` — not free-form tags.",
+          "**Drift is expected:** reconcile page and Jira at every review; record the reconciliation date.",
+          "**Never duplicate the description:** Jira owns delivery status; Confluence owns the contract."
+        ],
+        "tokens": [
+          {
+            "role": "Issue key",
+            "token": "--jira-key-format",
+            "value": "PROJECT-123",
+            "notes": "Uppercase, no spaces"
+          },
+          {
+            "role": "Required columns",
+            "token": "--jira-required-columns",
+            "value": "ID, Requirement, Jira, Status",
+            "notes": "Jira column mandatory"
+          },
+          {
+            "role": "Link direction",
+            "token": "--jira-link-direction",
+            "value": "page ↔ issue",
+            "notes": "Remote link on the page"
+          },
+          {
+            "role": "Link type",
+            "token": "--jira-link-type",
+            "value": "implements",
+            "notes": "Or documents, relates to"
+          },
+          {
+            "role": "Remote link title",
+            "token": "--jira-remote-title",
+            "value": "{KEY} — {summary}",
+            "notes": "Recognisable in Jira"
+          },
+          {
+            "role": "Sync cadence",
+            "token": "--jira-sync-cadence",
+            "value": "every review",
+            "notes": "Never let status drift a quarter"
+          },
+          {
+            "role": "Label taxonomy",
+            "token": "--jira-label-taxonomy",
+            "value": "type + domain + state",
+            "notes": "fds, payments, approved"
+          },
+          {
+            "role": "Status source",
+            "token": "--jira-status-source",
+            "value": "live macro or API",
+            "notes": "No copied status prose"
+          },
+          {
+            "role": "Reconciliation",
+            "token": "--jira-reconcile",
+            "value": "date in change log",
+            "notes": "Evidence of the last check"
+          }
+        ],
+        "composition": [
+          "**With fds-requirements (guide 02):** the requirement ID and Jira key form the traceability pair.",
+          "**With tables-matrices (guide 05):** the Jira column is the join key; keep it short and consistent.",
+          "**With update-versioning (guide 08):** every update records the Jira issue that motivated it.",
+          "**With automation-quality (guide 12):** link checks and status drift detection can run in CI."
+        ],
+        "patterns": [
+          "**Requirement traceability row:** `FR-001 | Create refund | PAY-1420 | Approved`.",
+          "**Epic banner:** an info panel naming the epic, owner and scope; the detail table carries stories.",
+          "**Live Jira macro:** embed one macro for the epic or a JQL filter, not twenty individual macros.",
+          "**Remote link:** `confluence.py jira-link add` creates the Jira-side link with a stable global ID.",
+          "**Reconciliation note:** `Last Jira reconciliation: 2026-11-17` beside the requirement table.",
+          "**Deprecation link:** the old page links to the successor issue and page."
+        ],
+        "useCases": [
+          "**Release audit** — walk every FR to its issue and test evidence before sign-off.",
+          "**Scope change** — a new story adds a row, a version and a change-log entry in one pass.",
+          "**Incident follow-up** — action items live in Jira; the postmortem links them by key.",
+          "**Compliance evidence** — the auditor sees the requirement, the authorising ticket and the approval."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Jira screenshots pasted as the source of truth** — stale, unsearchable and inaccessible",
+          "**Requirements with no Jira key in the table** — impossible to trace or prioritise",
+          "**Copying live status from Jira into prose and never refreshing** — the page lies within a day",
+          "**Linking only the epic and losing story-level traceability** — scope is visible, delivery is not",
+          "**Duplicate descriptions maintained in both Jira and Confluence** — two truths, guaranteed drift"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Link text must include the issue key and a short purpose: `PAY-1420 — refund epic`, not `click here`. The Jira macro renders a link whose accessible name should be meaningful; if it renders only an icon, add a text link beside it. Do not rely on the macro's colour or icon to convey status; the issue key and status text carry the meaning.",
+          "fallback": "If the Jira macro renders only an icon, add a text link with the issue key beside it."
+        }
+      }
+    },
+    {
+      "id": "update-versioning",
+      "number": 8,
+      "name": "Update and Versioning",
+      "folder": "08-update-versioning",
+      "summary": "Controlled Confluence updates — read before write, backup, section-level diff, version bump rules, mandatory version messages, change-log rows, conflict handling and deprecation.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "A Confluence page is a versioned product, not a scratchpad. An update is a controlled operation: fetch the current storage, capture a backup, change the smallest possible surface, validate, review the diff, publish with a version message, verify the result, and record the change in the log. The version history is the audit trail; if a change is not in the change log and the version message, it did not happen.",
+        "principles": [
+          "**Read before write:** never generate an update from memory or a stale local copy.",
+          "**Back up the current storage:** a local snapshot before every write, retained for rollback.",
+          "**Smallest safe diff:** change the section that changed; do not reformat the whole page.",
+          "**One logical change per version:** a typo fix and a scope change are two revisions.",
+          "**Message is part of the change:** `v12 — BR-004: dual approval at 50M VND` is reviewable; \"update\" is not.",
+          "**Change log is mandatory:** version, date, author, change, Jira — every time.",
+          "**Verify after publish:** re-fetch and compare the hash; Confluence may normalise storage.",
+          "**Conflict means stop:** a 409 is a human edit, not a retry signal.",
+          "**Deprecate, never delete:** old pages link to the successor and keep their history."
+        ],
+        "tokens": [
+          {
+            "role": "Version scheme",
+            "token": "--update-version",
+            "value": "major.minor[.patch]",
+            "notes": "Major for scope, minor for content"
+          },
+          {
+            "role": "Message format",
+            "token": "--update-message",
+            "value": "v{n} — {area}: {change}",
+            "notes": "≤ 255 characters"
+          },
+          {
+            "role": "Change log columns",
+            "token": "--update-changelog",
+            "value": "Version, Date, Author, Change, Jira",
+            "notes": "Newest row first"
+          },
+          {
+            "role": "Backup retention",
+            "token": "--update-backups",
+            "value": "10 per page",
+            "notes": "Local .confluence-backups/"
+          },
+          {
+            "role": "Diff review",
+            "token": "--update-diff-review",
+            "value": "before every write",
+            "notes": "confluence.py diff or --dry-run"
+          },
+          {
+            "role": "Conflict policy",
+            "token": "--update-conflict",
+            "value": "stop and rebase",
+            "notes": "Never overwrite a newer version"
+          },
+          {
+            "role": "Approval gate",
+            "token": "--update-approval",
+            "value": "Approved → In Review",
+            "notes": "Content change on an approved page"
+          },
+          {
+            "role": "Verification",
+            "token": "--update-verify",
+            "value": "hash + well-formedness",
+            "notes": "confluence.py verify"
+          }
+        ],
+        "composition": [
+          "**With document-architecture (guide 01):** the change log is the last numbered section and mirrors the frontmatter version.",
+          "**With review-governance (guide 10):** an approved page returns to In Review when scope changes.",
+          "**With automation-quality (guide 12):** `upsert` is idempotent; identical content does not create a version.",
+          "**With jira-traceability (guide 07):** every version message names the issue that authorised the change."
+        ],
+        "patterns": [
+          "**Update protocol:** fetch → backup → edit → validate → diff → publish → verify → changelog → notify.",
+          "**Section replacement:** read storage, replace one anchored block, leave the rest byte-identical.",
+          "**Scope-change reset:** status to `In Review`, reviewers re-added, change log row added.",
+          "**Rollback:** restore the previous storage from backup as a new version; never delete history.",
+          "**Deprecation banner:** an info panel at the top linking the successor page and issue.",
+          "**Version message template:** `v{n} — {section or rule}: {what changed and why}`."
+        ],
+        "useCases": [
+          "**Approved FDS gets a new business rule** — status reset, BR row added, AC added, version bumped, changelog row.",
+          "**Typo fix on a published runbook** — patch version, message names the section; no scope change.",
+          "**Concurrent edit during an agent update** — the 409 stops the write; the agent re-fetches and rebases.",
+          "**Page superseded by a new service** — deprecation banner, successor link, label `deprecated`, no deletion."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "api-contracts",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Full-page overwrite from a stale local copy** — silently reverts other people's work",
+          "**Silent typo edits on an approved document** — no version message, no audit trail",
+          "**Version bump with an empty or meaningless message** — \"update\" tells the next reader nothing",
+          "**Editing a published page without a change log row** — the log becomes fiction",
+          "**Deleting the old page instead of marking it superseded** — breaks every inbound link and the audit trail"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Version history is a public surface: keep messages readable by a person, not encoded (`v12 — dual approval`, not `fix#1245`). Change-log tables need a header row and text status. Deprecation banners must state the reason and the successor in text, not only a colour or icon.",
+          "fallback": "If a change cannot be described in a human-readable version message, it is too broad for one revision."
+        }
+      }
+    },
+    {
+      "id": "api-contracts",
+      "number": 9,
+      "name": "API Contracts",
+      "folder": "09-api-contracts",
+      "summary": "API specification pages for Confluence — OpenAPI as the canonical schema, endpoint tables, parameters, error catalogues, idempotency, pagination, rate limits, compatibility promises and contract-test evidence.",
+      "documentTypes": [
+        "api",
+        "fds"
+      ],
+      "sections": {
+        "definition": "An API specification page is the human-readable half of the contract. The OpenAPI document defines shape — paths, fields, types and required flags — while the page defines behaviour: what a field means, which errors a client must handle, whether a retry is safe, what happens at a rate limit, and what the compatibility promise is. When the two disagree, the schema wins for structure and the page is regenerated; a hand-maintained page that drifts from the schema is worse than no page at all.",
+        "principles": [
+          "**Schema canonical for shape:** link the OpenAPI document and generate the field tables from it; never retype every property by hand.",
+          "**Page canonical for behaviour:** semantics, ordering, side effects, retries and compatibility belong in prose the schema cannot express.",
+          "**Errors are part of the contract:** every endpoint documents its failure codes, HTTP status, retryability and the client action required.",
+          "**Examples are executable:** a request a reader can paste into a sandbox, with secrets redacted and realistic values.",
+          "**Idempotency is explicit:** name the header or key, the retention window and the response on reuse with a different payload.",
+          "**Auth is per endpoint:** scope, tenant boundary and token lifetime stated where the endpoint is defined.",
+          "**Pagination is specified:** cursor or offset, page size, ordering guarantee and the termination condition.",
+          "**Money and time are typed:** minor units or decimal scale, currency, ISO 8601 with UTC and an explicit precision.",
+          "**Compatibility is a promise:** additive changes versus breaking changes are classified before release, not after complaints.",
+          "**Contract tests are linked:** the evidence that the page and the running service agree."
+        ],
+        "tokens": [
+          {
+            "role": "Schema source",
+            "token": "--api-schema",
+            "value": "openapi.yaml",
+            "notes": "Linked from the overview; generated tables preferred"
+          },
+          {
+            "role": "Endpoint heading",
+            "token": "--api-endpoint-heading",
+            "value": "METHOD /path",
+            "notes": "One H3 per endpoint"
+          },
+          {
+            "role": "Parameter columns",
+            "token": "--api-param-columns",
+            "value": "Name, In, Type, Required, Constraints",
+            "notes": "No prose paragraphs in cells"
+          },
+          {
+            "role": "Response columns",
+            "token": "--api-response-columns",
+            "value": "Status, Body, Meaning",
+            "notes": "Every documented status, including errors"
+          },
+          {
+            "role": "Error columns",
+            "token": "--api-error-columns",
+            "value": "Code, HTTP, Meaning, Retry, Client action",
+            "notes": "Codes are stable identifiers"
+          },
+          {
+            "role": "Idempotency",
+            "token": "--api-idempotency",
+            "value": "header + window",
+            "notes": "State reuse semantics with a different body"
+          },
+          {
+            "role": "Pagination",
+            "token": "--api-pagination",
+            "value": "cursor, limit, next_cursor",
+            "notes": "Ordering guarantee stated"
+          },
+          {
+            "role": "Compatibility",
+            "token": "--api-compat-classes",
+            "value": "additive, breaking",
+            "notes": "Breaking needs a major version and notice"
+          },
+          {
+            "role": "Auth",
+            "token": "--api-auth",
+            "value": "OAuth 2.0 client credentials",
+            "notes": "Scope per endpoint"
+          },
+          {
+            "role": "Example hygiene",
+            "token": "--api-example-secrets",
+            "value": "redacted",
+            "notes": "Real tokens and customer data forbidden"
+          },
+          {
+            "role": "Contract evidence",
+            "token": "--api-contract-tests",
+            "value": "CI run link",
+            "notes": "Page version ↔ test run"
+          }
+        ],
+        "composition": [
+          "**With fds-requirements (guide 02):** the FR states the capability; the API section states the contract and is referenced, never duplicated.",
+          "**With tables-matrices (guide 05):** endpoint, parameter, response and error tables follow the same column budget and accessibility rules.",
+          "**With diagrams (guide 06):** a sequence diagram shows the call order; the endpoint table remains normative.",
+          "**With update-versioning (guide 08):** an API page and the service share a version boundary; breaking changes follow the deprecation protocol.",
+          "**With review-governance (guide 10):** a consumer-facing API change requires the API owner and a consumer representative in review.",
+          "**With automation-quality (guide 12):** schema diffing, example validation and contract tests run in CI before the page is published."
+        ],
+        "patterns": [
+          "**Overview block:** base URLs, protocol, auth, schema link, support channel and the compatibility promise in one table.",
+          "**Endpoint index:** method, path, purpose, auth scope and idempotency — the map before the detail.",
+          "**Endpoint anatomy:** purpose lede → auth and idempotency line → parameter table → request example → response table → error table.",
+          "**Error catalogue:** one page-level table of stable codes with HTTP status, retry policy and the client action; endpoints reference the codes.",
+          "**Idempotency contract:** key format, scope (per client or per tenant), retention window and the conflict response on reuse with a different payload.",
+          "**Pagination contract:** parameters, default and maximum page size, ordering guarantee, `next_cursor` semantics and the empty final page.",
+          "**Deprecation notice:** `Sunset` and `Deprecation` headers, successor endpoint, migration guide and removal date.",
+          "**Contract evidence:** a table mapping page version to contract-test run, environment and date."
+        ],
+        "useCases": [
+          "**Public payments API** — error semantics and idempotency decide whether a merchant retries or double-charges a customer.",
+          "**Internal service contract** — consumer teams need one page that states ownership, SLO and breaking-change policy before integration.",
+          "**Partner onboarding** — sandbox URLs, scopes and executable examples shorten the first successful call.",
+          "**API deprecation** — a sunset table with consumer, migration owner and deadline replaces an email thread.",
+          "**Incident follow-up** — a missing rate-limit contract becomes a documented limit and a client backoff requirement."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "review-governance",
+            "readability-accessibility",
+            "automation-quality"
+          ],
+          "caution": [
+            "fds-requirements"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Specification page that only links the schema with no behavioural prose** — clients cannot decide retries, idempotency or error handling",
+          "**API page that retypes every schema field by hand** — guaranteed drift from the OpenAPI source",
+          "**Happy-path-only examples with no error response** — integration failures are discovered in production",
+          "**Error codes renamed or reused without a version boundary** — client branches break silently",
+          "**Rate limits and retry semantics left undocumented** — clients retry blindly and amplify the incident",
+          "**Auth scopes described once in prose rather than per endpoint** — least privilege cannot be implemented",
+          "**Pagination documented without an ordering guarantee** — consumers miss or duplicate records during sync"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Every parameter table needs a header row and one parameter per row; screen readers announce column names, so avoid merged cells. Label code fences with a language so highlighting and assistive technology agree. Do not encode HTTP status or method by colour alone in a table — write `POST` and `429` as text. Link the schema with descriptive text (`OpenAPI 3.1 — refunds v1.4.2`), not \"here\". Diagrams need alt text that states the call order and failure path, not the file name.",
+          "fallback": "If a schema cannot be published, include the field tables in the page and mark the schema link as pending; never leave clients without the contract."
+        }
+      }
+    },
+    {
+      "id": "review-governance",
+      "number": 10,
+      "name": "Review and Governance",
+      "folder": "10-review-governance",
+      "summary": "Review and approval governance for enterprise Confluence pages — document states, entry and exit criteria, named reviewers, RACI, finding logs, version-specific sign-off, review cadence and deprecation.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Review governance is the controlled path a document takes from draft to approved, and the controls that keep it true afterwards. A review is not a meeting or a comment thread; it is an event with a scope, a version, named reviewers, evidence and a recorded decision. Governance makes the difference between a page that says `Approved` and a page an auditor, a new engineer or a partner can actually rely on. If approval cannot be tied to a version and a decision, it is a badge, not a control.",
+        "principles": [
+          "**One decision owner:** reviewers advise, the owner decides and is named in the control block.",
+          "**Every state has entry and exit criteria:** `Draft`, `In Review`, `Approved`, `Deprecated`, `Superseded` are defined, not decorative.",
+          "**Approve a version, not a page:** the sign-off records `doc_id`, version and content hash or change-log row.",
+          "**Review the diff:** reviewers read what changed plus its blast radius, not the whole page every time.",
+          "**Findings are tracked:** each finding has an ID, severity, owner and resolution; open findings block approval.",
+          "**Separation where risk demands it:** regulated, security-relevant and customer-facing documents require an approver other than the author.",
+          "**Silence is not approval:** a passed deadline never converts to `Approved`; it converts to `In Review` and an escalation.",
+          "**Evidence is linked:** test runs, threat models, ADRs, legal sign-off and Jira issues are cited beside the decision.",
+          "**Approval expires:** the control block carries a next-review date and the owner is accountable for the cadence.",
+          "**Deprecate, never delete:** superseded pages keep their history and point to the successor."
+        ],
+        "tokens": [
+          {
+            "role": "Status vocabulary",
+            "token": "--gov-statuses",
+            "value": "Draft, In Review, Approved, Deprecated, Superseded",
+            "notes": "Same values as the control block"
+          },
+          {
+            "role": "Approver rule",
+            "token": "--gov-approver",
+            "value": "named owner",
+            "notes": "One accountable decision maker"
+          },
+          {
+            "role": "Quorum",
+            "token": "--gov-quorum",
+            "value": "owner + required reviewers",
+            "notes": "Domain-specific, stated in the page"
+          },
+          {
+            "role": "Finding columns",
+            "token": "--gov-findings",
+            "value": "ID, Section, Finding, Severity, Owner, Status",
+            "notes": "Every finding is actionable"
+          },
+          {
+            "role": "Decision values",
+            "token": "--gov-decisions",
+            "value": "Approved, Approved with conditions, Rejected",
+            "notes": "No \"LGTM\" as a decision"
+          },
+          {
+            "role": "Review SLA",
+            "token": "--gov-sla",
+            "value": "5 business days",
+            "notes": "Escalate when breached"
+          },
+          {
+            "role": "Re-review trigger",
+            "token": "--gov-rereview",
+            "value": "scope, risk or API change",
+            "notes": "Minor edits keep approval"
+          },
+          {
+            "role": "Review cadence",
+            "token": "--gov-cadence",
+            "value": "6 months",
+            "notes": "Sensitive docs quarterly"
+          },
+          {
+            "role": "Sign-off evidence",
+            "token": "--gov-evidence",
+            "value": "version + test run + Jira",
+            "notes": "Stored in the review record"
+          },
+          {
+            "role": "Expiry",
+            "token": "--gov-expiry",
+            "value": "next review date",
+            "notes": "Past due means In Review"
+          },
+          {
+            "role": "Deprecation notice",
+            "token": "--gov-deprecation",
+            "value": "successor + date + reason",
+            "notes": "Banner at the top of the page"
+          }
+        ],
+        "composition": [
+          "**With document-architecture (guide 01):** the control block and change log are the governance surface; no separate status page.",
+          "**With fds-requirements (guide 02):** requirement rows inherit the page state and cannot be `Approved` while the page is `In Review`.",
+          "**With jira-traceability (guide 07):** the approval references the epic and every blocking finding has an issue key.",
+          "**With update-versioning (guide 08):** any scope change on an approved page returns it to `In Review` and bumps the version.",
+          "**With readability-accessibility (guide 11):** the review checklist includes accessibility evidence, not only content correctness.",
+          "**With automation-quality (guide 12):** CI enforces the mechanical checks so reviewers spend their time on meaning."
+        ],
+        "patterns": [
+          "**State transition table:** state, entry criteria, exit criteria, who can move it and what evidence is required.",
+          "**RACI:** role, name, responsibility and whether they are accountable, consulted or informed.",
+          "**Review record:** document ID, version, scope, reviewers, decision, conditions, date and Jira key in one block.",
+          "**Finding log:** ID, section anchor, finding, severity, owner, status and resolution; open P1/P2 findings block approval.",
+          "**Conditional approval:** conditions with an owner and a due date, and the state remains `In Review` until they close.",
+          "**Review cadence matrix:** document type, cadence, trigger and owner; sensitive documents reviewed more often.",
+          "**Sign-off table:** reviewer, role, scope reviewed, decision and date — one row per person.",
+          "**Deprecation review:** reason, successor, migration deadline and the communication owner."
+        ],
+        "useCases": [
+          "**Regulated FDS** — an auditor walks from approval to version, reviewer and evidence without asking for a meeting.",
+          "**Security review** — the threat model is approved by security and the page records the scope that was reviewed.",
+          "**Partner-facing API** — a consumer representative signs the migration plan before a breaking change ships.",
+          "**Quarterly document health check** — stale approved pages move to `In Review` and owners are notified.",
+          "**Post-incident governance** — action items are tracked in Jira and the postmortem stays `In Review` until they have owners and dates."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "readability-accessibility"
+          ],
+          "caution": [
+            "automation-quality"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**LGTM comment with no version or scope** — approval cannot be tied to what was actually read",
+          "**Approval by silence when the deadline passes** — unreviewed content ships with a green badge",
+          "**Status changed to Approved without evidence links** — the badge is decoration and the audit fails",
+          "**Reviewing the entire page for a one-row change** — reviewers burn out and stop reading carefully",
+          "**Approved page with no next-review date** — stale contracts remain authoritative long after they are true",
+          "**Review conducted only in chat with no recorded decision** — the outcome disappears with the channel",
+          "**Self-approval on a regulated document with no separation of duties** — a control failure, not a shortcut"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "The review checklist must include keyboard, focus, zoom and screen-reader evidence for any document that specifies a UI. Status macros need a text label; a green lozenge alone is not an approval. The sign-off table needs a header row and one reviewer per row so assistive technology can map decisions to people. Review comments should cite the section anchor and quote the sentence under discussion; \"see above\" is ambiguous for everyone and unusable in a transcript. Meeting-only reviews exclude reviewers who cannot attend; keep a written record with the same evidence.",
+          "fallback": "If a reviewer cannot access the page, provide an accessible export and record the approval against the same version."
+        }
+      }
+    },
+    {
+      "id": "readability-accessibility",
+      "number": 11,
+      "name": "Readability and Accessibility",
+      "folder": "11-readability-accessibility",
+      "summary": "Readable and accessible Confluence writing — plain language, sentence and paragraph budgets, descriptive headings and links, alt text, status semantics, zoom and screen-reader behaviour, and Vietnamese typography.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Readability is the effort a reader spends to extract meaning; accessibility is whether that effort is possible at all for someone using a screen reader, keyboard, zoom or reduced colour perception. In Confluence, most accessibility failures are authoring failures, not platform failures: bold paragraphs pretending to be headings, tables without headers, status conveyed only by colour, links that say \"here\", images without alt text, Vietnamese stripped of diacritics. Readable documents are not simpler documents — they are documents where the structure does the work instead of the reader.",
+        "principles": [
+          "**Answer first:** every section opens with one or two sentences stating the conclusion before evidence or procedure.",
+          "**One idea per paragraph:** three to five sentences, and split before the paragraph becomes a wall.",
+          "**Short sentences:** aim for 25 words or fewer; one clause of qualification is enough.",
+          "**Active voice, named actor:** \"Risk Operations approves refunds above 50M VND\", not \"approval is required\".",
+          "**Headings are questions or answers:** `6.2 Dual approval` beats `6.2 Miscellaneous`.",
+          "**Links name their destination:** `FDS-PAY-014 change log`, not `click here` or `tại đây`.",
+          "**Alt text states the conclusion:** describe what the reader should learn, not the file or the pixels.",
+          "**Colour is redundant:** status always carries a text label; method, severity and outcome are written as words.",
+          "**Real structure only:** `<h2>`/`<h3>` for hierarchy, `<th>` for table headers, never bold or font size.",
+          "**Vietnamese keeps its diacritics:** write `Yêu cầu chức năng`, never `Yeu cau chuc nang`; screen readers and search both depend on the marks.",
+          "**Terms are stable:** one concept, one term; define acronyms on first use and keep a glossary.",
+          "**Reflow at 200%:** no horizontal scrolling for prose, and tables stay within the column budget."
+        ],
+        "tokens": [
+          {
+            "role": "Sentence length",
+            "token": "--read-sentence-words",
+            "value": "≤ 25",
+            "notes": "Split at the second clause"
+          },
+          {
+            "role": "Paragraph length",
+            "token": "--read-paragraph-sentences",
+            "value": "3–5",
+            "notes": "More becomes a new section"
+          },
+          {
+            "role": "Section lede",
+            "token": "--read-lede",
+            "value": "1–2 sentences",
+            "notes": "Before any table or list"
+          },
+          {
+            "role": "Heading depth",
+            "token": "--read-heading-depth",
+            "value": "3",
+            "notes": "No skipped levels"
+          },
+          {
+            "role": "Link text",
+            "token": "--read-link-text",
+            "value": "destination + purpose",
+            "notes": "Never \"here\""
+          },
+          {
+            "role": "Alt text",
+            "token": "--read-alt-text",
+            "value": "8–20 words",
+            "notes": "Conclusion, not filename"
+          },
+          {
+            "role": "Contrast",
+            "token": "--read-contrast",
+            "value": "4.5:1 body, 3:1 large",
+            "notes": "WCAG AA"
+          },
+          {
+            "role": "Zoom",
+            "token": "--read-zoom",
+            "value": "200%",
+            "notes": "No loss of content or function"
+          },
+          {
+            "role": "Language",
+            "token": "--read-language",
+            "value": "vi-VN or en-US",
+            "notes": "Per page and per quotation"
+          },
+          {
+            "role": "Acronyms",
+            "token": "--read-acronyms",
+            "value": "expanded on first use",
+            "notes": "Glossary in the appendix"
+          },
+          {
+            "role": "Status",
+            "token": "--read-status",
+            "value": "text + colour",
+            "notes": "Icon alone is not a label"
+          },
+          {
+            "role": "Table columns",
+            "token": "--read-table-columns",
+            "value": "≤ 8",
+            "notes": "Ten is the hard ceiling"
+          }
+        ],
+        "composition": [
+          "**With visual-hierarchy (guide 03):** hierarchy is a readability device; panels and tables only help if headings and labels are real.",
+          "**With tables-matrices (guide 05):** header rows, short cells and no merged cells are accessibility requirements, not preferences.",
+          "**With diagrams (guide 06):** alt text and a long description are part of the document, not metadata added at publish time.",
+          "**With review-governance (guide 10):** accessibility evidence belongs in the review checklist for every UI-facing document.",
+          "**With typography (design-system companion):** line length, spacing and heading rhythm apply to pages as much as to interfaces.",
+          "**With automation-quality (guide 12):** lint can detect missing alt text and ASCII-only Vietnamese; it cannot judge whether the wording is clear."
+        ],
+        "patterns": [
+          "**Answer-first section:** lede sentence, one table of evidence, one exception panel, optional expand for depth.",
+          "**In-short panel:** three sentences at the top of a long page: what it is, who it is for, what decision it needs.",
+          "**Glossary table:** term, definition, Vietnamese equivalent, first use; linked from the appendix.",
+          "**Do/Don't table:** behaviour, do, don't, reason — the fastest way to remove ambiguity without a paragraph.",
+          "**Text-plus-colour status:** `{{status:green|Approved}}` in a table with a `Status` header; the word carries the meaning.",
+          "**Descriptive link:** `[PAY-1420 — refund epic]({URL})`; the accessible name is useful out of context.",
+          "**Long description for a diagram:** a short expand listing the steps or states, for readers who cannot see the image.",
+          "**Screen-reader test script:** heading outline, table navigation, link list and form/status announcement checked before approval.",
+          "**Vietnamese terminology table:** English term, Vietnamese term, note on declension or abbreviation."
+        ],
+        "useCases": [
+          "**Mixed-language FDS in Vietnam** — Vietnamese prose with English technical terms; the glossary prevents three translations of the same concept.",
+          "**Screen-reader review of a runbook** — an on-call engineer navigates by headings and tables at 3 a.m., often on a laptop with zoom.",
+          "**Mobile approver** — a manager reads the summary panel and status table on a phone; reflow and short cells decide whether approval happens.",
+          "**Compliance audit** — the auditor checks that the published page is readable, link text is meaningful and alt text describes the evidence.",
+          "**Legacy page retrofit** — replacing bold pseudo-headings and ASCII Vietnamese with real structure and correct diacritics."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "review-governance",
+            "automation-quality"
+          ],
+          "caution": [],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Paragraphs over 180 words with no structure** — readers skim, miss the decision and ask for a meeting",
+          "**\"Click here\" or \"tại đây\" link text** — meaningless in a link list and for screen readers",
+          "**Status conveyed only by colour** — invisible in greyscale, print and to colour-blind readers",
+          "**Bold paragraphs used as headings** — the visual hierarchy exists, the accessible outline does not",
+          "**Acronyms and abbreviations never expanded** — excludes new joiners and breaks translation",
+          "**Vietnamese stripped of diacritics** — screen readers mispronounce it and search fails to match",
+          "**Alt text that repeats the filename** — `refund-state.png` tells the reader nothing",
+          "**Tables used for page layout** — breaks reflow at zoom and confuses table navigation"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Target WCAG 2.2 AA for published documents. The relevant criteria are 1.3.1 (structure and relationships), 1.4.3 (contrast), 1.4.4 (resize text), 1.4.10 (reflow), 2.4.4 (link purpose), 2.4.6 (headings and labels), 2.4.7 (focus visible) and 3.1.1 (language of page). In practice: keep one H1, never skip heading levels, use real table headers, give every image alt text, and keep status text beside the colour. Test with VoiceOver or NVDA: navigate by headings, open the link list, move through a table and confirm the status macro announces its title. Test at 200% zoom and in greyscale. For Vietnamese, verify that the page language is set so the screen reader uses the Vietnamese voice; ASCII-only text is a defect, not a simplification. Expand macros can hide content from search and from some assistive flows — never put mandatory criteria only inside an expand.",
+          "fallback": "If legal or domain text cannot reach the sentence budget, keep the precise text and add a plain-language summary above it."
+        }
+      }
+    },
+    {
+      "id": "automation-quality",
+      "number": 12,
+      "name": "Automation and Quality",
+      "folder": "12-automation-quality",
+      "summary": "Docs-as-code automation for Confluence — deterministic conversion, lint gates, idempotent publishing, dry runs, backups, verification, drift audits, CI pipelines and document quality metrics.",
+      "documentTypes": [
+        "fds",
+        "api",
+        "rfc",
+        "runbook",
+        "release",
+        "postmortem",
+        "adr"
+      ],
+      "sections": {
+        "definition": "Documentation automation is the reproducible path from a reviewed Markdown source to a verified Confluence page, plus the scheduled audits that keep it true. Quality is enforced by executable gates, not by reviewer vigilance: the converter must be deterministic, the linter must enforce the formatting contract, publishing must be idempotent and backed up, and every write must be verified against the remote page. Automation handles the mechanical checks so people can review meaning — scope, correctness, risk and clarity.",
+        "principles": [
+          "**Git is the source of truth:** Confluence is a publication target, not the editing surface for managed documents.",
+          "**Deterministic conversion:** the same input and version produce byte-identical storage; a diff means the content changed.",
+          "**Gate before write:** lint, publish-mode checks and well-formedness run before any API call.",
+          "**Idempotent publish:** `upsert` compares the content hash and creates no version when nothing changed.",
+          "**Dry run first:** every write supports a preview; the diff is the review artefact.",
+          "**Explicit version messages:** the message names the section and the change; automation must never invent \"update\".",
+          "**Backup before write:** the previous storage is retained locally for rollback.",
+          "**Verify after write:** re-fetch, compare the hash and check the version number; success is proven, not assumed.",
+          "**Secrets stay in the environment:** tokens are read from env vars or a local `.env`, never committed or pasted into a prompt.",
+          "**Drift is detected on a schedule:** CQL audits find orphaned, stale and unlabelled pages before an auditor does.",
+          "**Fail closed:** unknown macros, malformed storage and missing credentials stop the run.",
+          "**Templates and examples version together:** a scaffold change is not done until the reference example still passes."
+        ],
+        "tokens": [
+          {
+            "role": "Source format",
+            "token": "--auto-source",
+            "value": "Markdown + frontmatter",
+            "notes": "Committed to git"
+          },
+          {
+            "role": "Converter check",
+            "token": "--auto-check",
+            "value": "md2storage.py --check",
+            "notes": "Well-formedness gate"
+          },
+          {
+            "role": "Lint score",
+            "token": "--auto-min-score",
+            "value": "90",
+            "notes": "85 for drafts, 100 for examples"
+          },
+          {
+            "role": "Publish mode",
+            "token": "--auto-publish",
+            "value": "--publish",
+            "notes": "Placeholders and labels become errors"
+          },
+          {
+            "role": "Idempotency",
+            "token": "--auto-upsert",
+            "value": "hash comparison",
+            "notes": "No version when unchanged"
+          },
+          {
+            "role": "Version message",
+            "token": "--auto-message",
+            "value": "v{n} — {area}: {change}",
+            "notes": "Required on every write"
+          },
+          {
+            "role": "Backup retention",
+            "token": "--auto-backups",
+            "value": "10 per page",
+            "notes": ".confluence-backups/"
+          },
+          {
+            "role": "Verification",
+            "token": "--auto-verify",
+            "value": "remote hash + version",
+            "notes": "After every write"
+          },
+          {
+            "role": "Drift cadence",
+            "token": "--auto-audit",
+            "value": "weekly",
+            "notes": "CQL + ownership check"
+          },
+          {
+            "role": "Token scope",
+            "token": "--auto-token",
+            "value": "minimum space access",
+            "notes": "Rotate on a schedule"
+          },
+          {
+            "role": "CI runtime",
+            "token": "--auto-ci",
+            "value": "≤ 5 minutes",
+            "notes": "Fast enough to run on every PR"
+          },
+          {
+            "role": "Audit columns",
+            "token": "--auto-audit-columns",
+            "value": "Page, Owner, Version, Age, Status",
+            "notes": "One row per finding"
+          }
+        ],
+        "composition": [
+          "**With storage-format (guide 04):** conversion and XHTML validation are the same gate; the converter is the only writer of storage.",
+          "**With update-versioning (guide 08):** automation implements the read-backup-diff-publish-verify protocol; it does not replace the judgement of what to change.",
+          "**With review-governance (guide 10):** CI enforces mechanical review evidence; humans still record the decision.",
+          "**With jira-traceability (guide 07):** link checks and status reconciliation run on a schedule against the Jira API.",
+          "**With readability-accessibility (guide 11):** lint can flag missing alt text and ASCII-only Vietnamese; a manual accessibility sample remains mandatory.",
+          "**With document-architecture (guide 01):** templates are versioned artefacts; the CI validates every template and the completed example."
+        ],
+        "patterns": [
+          "**CI pipeline:** checkout → lint documents → validate examples → convert all templates → repo contract check → publish only on the default branch with an explicit message.",
+          "**Pre-commit hook:** convert the changed Markdown and run the matching profile; block the commit on a malformed fragment.",
+          "**Publish manifest:** title, space, labels, version and content hash produced by the converter and consumed by the publisher.",
+          "**Idempotent upsert:** search by title in the target space, compare hashes, skip or update; labels reconciled from frontmatter.",
+          "**Drift audit:** CQL for `label = fds and lastmodified < now(\"-180d\")`, then a table of page, owner, version and action.",
+          "**Quality dashboard:** documents checked, pass rate, stale pages, broken links, missing owners, next review overdue.",
+          "**Batch migration:** per-page dry run, then a single write loop with a backup directory and a failure report.",
+          "**Agent publish protocol:** read → plan → convert → lint → diff → write with message → verify → report URL and hash."
+        ],
+        "useCases": [
+          "**Docs-as-code repository** — every FDS, RFC and runbook is reviewed in a pull request and published by CI.",
+          "**Nightly drift audit** — pages with no owner, no changelog row or an expired review date are reported to the space owner.",
+          "**Multi-space template rollout** — the same template is validated once and published to several spaces with different labels.",
+          "**Agent-assisted update** — the agent converts, lints and previews the diff; a human approves the version message and write.",
+          "**Incident documentation** — the postmortem template is generated from the incident record, then reviewed and published with evidence links.",
+          "**Release gate** — the release notes cannot publish while the lint gate or the changelog check fails."
+        ],
+        "combinations": {
+          "good": [
+            "document-architecture",
+            "fds-requirements",
+            "visual-hierarchy",
+            "storage-format",
+            "tables-matrices",
+            "diagrams",
+            "jira-traceability",
+            "update-versioning",
+            "api-contracts",
+            "readability-accessibility"
+          ],
+          "caution": [
+            "review-governance"
+          ],
+          "avoid": []
+        },
+        "antiPatterns": [
+          "**Browser copy-paste as the deployment process** — no diff, no validation, no audit trail",
+          "**Lint warnings ignored because the page looks fine** — the format contract erodes one exception at a time",
+          "**Credentials committed to the repository or pasted into prompts** — a leak that outlives the automation",
+          "**Blind retry after a 409 version conflict** — overwrites a human edit and loses their work",
+          "**Automated publish without post-write verification** — success is assumed, not proven",
+          "**Templates updated without revalidating the examples** — the scaffold and the reference diverge",
+          "**Scheduled audit that reports drift but assigns no owner** — the report becomes noise and the pages stay stale"
+        ],
+        "accessibility": {
+          "required": true,
+          "notes": "Automated checks catch missing alt text, skipped heading levels and colour-only status patterns, but they cannot prove that alt text is meaningful or that the reading order makes sense. Keep one manual screen-reader pass per release for each document type, and never auto-generate alt text as a filename or \"image\". Lint the Vietnamese profile so ASCII-only headings and missing diacritics fail before publication. In CI reports, state the page, the rule and the fix — a failure without a remediation is just noise.",
+          "fallback": "If a check cannot be automated, put it on the manual review checklist with an owner; do not drop the control."
+        }
+      }
+    }
+  ]
+}

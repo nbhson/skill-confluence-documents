@@ -81,6 +81,25 @@ python3 scripts/confluence.py --env-file .env update --page-id 12345 --from-md r
 python3 scripts/confluence.py --env-file .env verify --page-id 12345
 ```
 
+## 🤖 Use With Other Agents
+
+`SKILL.md` is the canonical router and formatting contract. The adapters below are thin entry points for hosts that do not load OpenCode skills automatically; they point back to `SKILL.md` instead of duplicating it.
+
+| Host | Entry point | How it loads |
+|---|---|---|
+| Claude Code | `CLAUDE.md` | Project memory; or link the repository into `~/.claude/skills/confluence-documents` so `SKILL.md` is discovered as a skill. |
+| GitHub Copilot | `.github/copilot-instructions.md` | Repository instructions for Copilot Chat and the coding agent. Use agent mode to run the scripts. |
+| Cline | `.clinerules/confluence-documents.md` | Workspace rules. Workflows in `.clinerules/workflows/` are invoked as `/new-document.md`, `/publish-page.md` and `/audit-document.md`. |
+| Codex, Gemini CLI, Cursor, Windsurf, Aider | `AGENTS.md` | Host-neutral entry point for any agent with file reads and shell access. |
+
+Claude Code global install:
+
+```bash
+ln -s "$(pwd)" ~/.claude/skills/confluence-documents
+```
+
+The scripts stay host-independent: Python 3.11+ standard library only, invoked from a shell. Copilot in plain chat mode cannot execute them; authoring and linting then remain manual.
+
 ## 🧩 Templates and Profiles
 
 | Template | Document | Language | Lint profile | Required sections |
@@ -131,6 +150,7 @@ It verifies:
 5. Every template converts to well-formed storage XHTML.
 6. The completed Vietnamese example scores at least 85 with `--profile fds-vi --publish`.
 7. Repository hygiene: no secrets, no `.env`, no generated storage or backup directories committed.
+8. Host adapters exist for Claude Code, GitHub Copilot, Cline and generic agents, and each points back to `SKILL.md`.
 
 The GitHub Actions workflow in [`.github/workflows/validate.yml`](./.github/workflows/validate.yml) runs the same gates on every push and pull request.
 
@@ -140,6 +160,12 @@ The GitHub Actions workflow in [`.github/workflows/validate.yml`](./.github/work
 skill-confluence-documents/
 ├── SKILL.md                     # Agent router: contract, workflow, publish protocol
 ├── README.md                    # This file: overview, usage, matrix
+├── AGENTS.md                    # Host-neutral adapter: Codex, Gemini CLI, Cursor, …
+├── CLAUDE.md                    # Claude Code adapter
+├── .clinerules/                 # Cline rules and slash-command workflows
+├── .github/
+│   ├── copilot-instructions.md  # GitHub Copilot adapter
+│   └── workflows/validate.yml
 ├── assets/
 │   ├── templates/               # Canonical Markdown templates (English + Vietnamese FDS)
 │   ├── examples/                # Completed, lint-clean reference document
@@ -156,7 +182,6 @@ skill-confluence-documents/
 │   ├── confluence.py            # Safe Confluence Cloud API CLI
 │   └── validate_skills.py       # Repository CI contract
 ├── plan/readme.md               # Design decisions and quality gates
-├── .github/workflows/validate.yml
 ├── .env.example
 └── LICENSE
 ```

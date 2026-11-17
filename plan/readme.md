@@ -52,6 +52,10 @@ The converter guarantees well-formed XHTML; it cannot know whether a change log 
 
 The CLI centralises the risky parts of publishing: credential handling, URL normalisation, backups, version conflict detection, content-hash idempotency, post-write verification and consistent error messages. Agents should not hand-craft `curl` calls against a production wiki.
 
+### Why thin adapters
+
+`SKILL.md` is a portable Agent Skills document, but hosts differ in discovery. Claude Code reads `CLAUDE.md` and `~/.claude/skills/*/SKILL.md`; Copilot reads `.github/copilot-instructions.md`; Cline reads `.clinerules/`. Each adapter is a short routing file that points to `SKILL.md`, the matching template and the scripts. Duplicating the full contract would create drift, so adapters are intentionally thin and the repository contract checks that they exist and link back.
+
 ## Document Contract
 
 All document profiles share the same spine:
@@ -93,6 +97,7 @@ Profiles add required section names and domain checks:
 | Backups | Local timestamped snapshots | Rollback without relying on the wiki |
 | Verification | Re-fetch and compare hash/version | Success is proven, not assumed |
 | Language | English canonical + Vietnamese specialization | Shared structure, local readability |
+| Host portability | Canonical `SKILL.md` + thin adapters | Hosts that do not load Agent Skills still get a routing entry point without forking the contract |
 | Dependencies | Python standard library only | Runs anywhere, no supply-chain surface |
 
 ## Quality Gates
@@ -107,7 +112,8 @@ Profiles add required section names and domain checks:
 6. A template does not convert to well-formed storage XHTML.
 7. The completed Vietnamese example has a publication error or scores below 85.
 8. The root router, references, glossary, plan, CI workflow, env example or licence is missing.
-9. A generated directory (`.work`, `.confluence-backups`), `.env` file or likely secret is present.
+9. A host adapter is missing or does not point back to `SKILL.md`.
+10. A generated directory (`.work`, `.confluence-backups`), `.env` file or likely secret is present.
 
 The second gate is the document contract itself:
 
@@ -150,6 +156,7 @@ The live-publish gap is deliberate and documented. The CLI fails closed with an 
 ## Acceptance Criteria
 
 - [x] Twelve discipline guides with the 10-section standard.
+- [x] Host adapters for Claude Code, GitHub Copilot, Cline and generic agents.
 - [x] Eight templates covering FDS, API, RFC, runbook, release, postmortem and ADR, plus the Vietnamese FDS.
 - [x] A completed Vietnamese FDS example at 100/100 with `--publish`.
 - [x] A converter, linter and safe Confluence CLI using only the standard library.

@@ -390,6 +390,10 @@ def check_assets() -> None:
     required = [
         ROOT / "SKILL.md",
         ROOT / "README.md",
+        ROOT / "AGENTS.md",
+        ROOT / "CLAUDE.md",
+        ROOT / ".github" / "copilot-instructions.md",
+        ROOT / ".clinerules" / "confluence-documents.md",
         ROOT / "plan" / "readme.md",
         ROOT / "skills" / "assets" / "references.md",
         ROOT / "assets" / "terminology" / "vi-en-glossary.md",
@@ -402,6 +406,21 @@ def check_assets() -> None:
         ROOT / "scripts" / "validate_document.py",
     ]
     for path in required:
+        check(path.exists(), f"{path.relative_to(ROOT)} exists")
+
+    adapters = [
+        ROOT / "AGENTS.md",
+        ROOT / "CLAUDE.md",
+        ROOT / ".github" / "copilot-instructions.md",
+        ROOT / ".clinerules" / "confluence-documents.md",
+    ]
+    for path in adapters:
+        if path.exists():
+            text = path.read_text(encoding="utf-8")
+            check("SKILL.md" in text, f"{path.relative_to(ROOT)} points to SKILL.md")
+
+    for name in ("new-document", "publish-page", "audit-document"):
+        path = ROOT / ".clinerules" / "workflows" / f"{name}.md"
         check(path.exists(), f"{path.relative_to(ROOT)} exists")
 
     router = ROOT / "SKILL.md"

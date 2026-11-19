@@ -22,10 +22,11 @@ Copilot does not discover nested `skills/*/SKILL.md` guides automatically. Treat
 1. Classify the request; for updates, classify from the live page.
 2. Copy the matching template into the working directory.
 3. Fill frontmatter first: title, `doc_id`, version, status, owner, reviewers, Jira key, space, labels, classification, `updated`. Use explicit placeholders and `Draft` when facts are missing.
-4. Lint with the matching profile and `--publish`.
-5. Convert to storage XHTML with `--check`.
-6. Publish only with the safe protocol: search before create; get → diff → update with a version message → verify for existing pages.
-7. Report title, page ID, URL, version, score and verification result. Say plainly when nothing was published.
+4. Choose display containers from the Step 2b format palette in `SKILL.md` (catalogue: guide 04 Example 0; worked sample: `assets/examples/confluence-format-showcase.md`).
+5. Lint with the matching profile and `--publish`.
+6. Convert to storage XHTML with `--check`.
+7. Publish only with the safe protocol: search before create; get → diff → update with a version message → verify for existing pages.
+8. Report title, page ID, URL, version, score and verification result. Say plainly when nothing was published.
 
 ```bash
 python3 scripts/validate_document.py path/to/doc.md --profile fds --min-score 90 --publish

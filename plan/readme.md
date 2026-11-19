@@ -111,29 +111,34 @@ Profiles add required section names and domain checks:
 5. The README matrix differs from `data.json`.
 6. A template does not convert to well-formed storage XHTML.
 7. The completed Vietnamese example has a publication error or scores below 85.
-8. The root router, references, glossary, plan, CI workflow, env example or licence is missing.
-9. A host adapter is missing or does not point back to `SKILL.md`.
-10. A generated directory (`.work`, `.confluence-backups`), `.env` file or likely secret is present.
+8. The Confluence format showcase fails to convert, has a publication error, or scores below 90 with `--profile generic --publish`.
+9. The root router, references, glossary, plan, CI workflow, env example, licence or `test_confluence.py` is missing.
+10. A host adapter is missing, does not point back to `SKILL.md`, or its routing table no longer matches the router's Step 0 (template, lint profile) pairs.
+11. A generated directory (`.work`, `.confluence-backups`), `.env` file or likely secret is present.
 
 The second gate is the document contract itself:
 
 ```bash
 python3 scripts/validate_document.py assets/examples/fds-payment-refund.vi.md \
   --profile fds-vi --min-score 85 --publish
+
+python3 scripts/validate_document.py assets/examples/confluence-format-showcase.md \
+  --profile generic --min-score 90 --publish
 ```
 
 ## Testing Strategy
 
 | Layer | Test | Status |
 |---|---|---|
-| Converter | Every template and the completed example convert with `--check` | Automated in CI |
-| Linter | The completed example scores 100/100 with `--publish` | Automated in CI |
-| CLI construction | `--help`, argument parsing and missing-credential failure | Manual (offline) |
+| Converter | Every template, the completed example and the format showcase convert with `--check` | Automated in CI |
+| Linter | The completed example scores 100/100 and the showcase 100/100 with `--publish` | Automated in CI |
+| CLI construction | Credentials, env-file loading, version messages, backups, hashing, error hints, `create --dry-run` and missing-credential fail-closed | Automated in CI (`test_confluence.py`) |
+| Display formats | Lint rules for unknown directives/macros, untitled expands and the callout budget; closed-converter catalogue; showcase exercises every container | Automated in CI |
 | Storage validity | `xml.etree` well-formedness on every conversion | Automated |
-| Repository contract | 12 guides, data.json parity, matrix symmetry | Automated in CI |
+| Repository contract | 12 guides, data.json parity, matrix symmetry, adapter routing parity | Automated in CI |
 | Live publish | Create/update/verify against a real Confluence Cloud site | Blocked: no credentials or MCP server in this environment |
 
-The live-publish gap is deliberate and documented. The CLI fails closed with an actionable message when credentials are missing; it never pretends to publish. Adding credentials and running `whoami` is the first step in a tenant-specific smoke test.
+The live-publish gap is deliberate and documented. The CLI fails closed with an actionable message when credentials are missing; it never pretends to publish. `test_confluence.py` proves the offline safety of the credential, dry-run and backup paths without any network. Adding credentials and running `whoami` is the first step in a tenant-specific smoke test.
 
 ## Known Limitations
 

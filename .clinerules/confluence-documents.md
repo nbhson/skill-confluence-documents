@@ -20,7 +20,7 @@ This workspace is a portable skill pack for enterprise Confluence Cloud document
 1. Read `SKILL.md` and exactly one relevant guide before writing.
 2. Copy the template into the working directory; never edit `assets/templates/` in place.
 3. Frontmatter first: title, `doc_id`, version, status, owner, reviewers, Jira key, space, labels, classification, `updated`.
-4. Tables over bullets; no bullets-only section; answer first in every H2.
+4. Tables over bullets; no bullets-only section; answer first in every H2. Display containers come from the Step 2b palette in `SKILL.md` — titled callouts and expands, at most five callouts per page, unknown macros fail closed.
 5. Lint with `--publish`, then convert with `--check`.
 6. Publish only with `scripts/confluence.py`: search before create; get → diff → update with a version message → verify.
 7. Never invent page IDs, URLs, Jira keys, metrics, owners or approval dates.

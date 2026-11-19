@@ -12,12 +12,13 @@ This repository is a portable Agent Skill for enterprise Confluence Cloud docume
 ln -s /absolute/path/to/skill-confluence-documents ~/.claude/skills/confluence-documents
 ```
 
-Copy the whole repository if symlinks are unavailable — not only `SKILL.md` — so `skills/`, `scripts/` and `assets/` remain reachable. The frontmatter already satisfies the Agent Skills contract (`name: confluence-documents`).
+Copy the whole repository if symlinks are unavailable — not only `SKILL.md` — so `skills/`, `scripts/` and `assets/` remain reachable. The frontmatter already satisfies the Agent Skills contract (`name: confluence-documents`). Hosts that validate name against folder name require the skills folder to be **`confluence-documents`**, not the repository folder name `skill-confluence-documents`; clone or rename accordingly.
 
 ## Operating rules
 
 1. Read `SKILL.md` and exactly one relevant guide from `skills/`.
 2. Start from the matching template in `assets/templates/`; never edit templates in place.
+3. Choose display containers from the Step 2b format palette in `SKILL.md`; the full catalogue is Example 0 of guide 04 and the worked sample is `assets/examples/confluence-format-showcase.md`.
 3. Lint with `scripts/validate_document.py ... --publish`, then convert with `scripts/md2storage.py ... --check`.
 4. Publish only through `scripts/confluence.py`: search first, dry-run creates, and for updates use get → diff → update with a version message → verify.
 5. Never invent page IDs, URLs, Jira keys, owners or approval dates.

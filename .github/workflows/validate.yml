@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -27,10 +31,18 @@ jobs:
       - name: Repository contract
         run: python3 scripts/validate_skills.py --verbose
 
+      - name: Confluence CLI offline tests
+        run: python3 scripts/test_confluence.py
+
       - name: Lint the completed Vietnamese example
         run: |
           python3 scripts/validate_document.py assets/examples/fds-payment-refund.vi.md \
             --profile fds-vi --min-score 85 --publish
+
+      - name: Lint the format showcase
+        run: |
+          python3 scripts/validate_document.py assets/examples/confluence-format-showcase.md \
+            --profile generic --min-score 90 --publish
 
       - name: Convert every template
         run: |

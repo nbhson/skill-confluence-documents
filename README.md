@@ -9,6 +9,7 @@ The skill is built for the documents enterprises actually run on: functional des
 - **Formatting is enforceable, not aspirational.** `validate_document.py` fails bullet-only sections, missing document control blocks, unsynced change logs, orphan requirements, colour-only status, vague link text and ASCII-only Vietnamese headings.
 - **Publishing is a controlled operation.** `confluence.py` reads before writing, backs up existing storage, refuses blind conflicts, requires a version message and verifies the remote hash after publish.
 - **Markdown is the source, storage is generated.** `md2storage.py` emits a conservative XHTML subset with allowlisted macros, CDATA code blocks and accessibility attributes.
+- **Display format is a decision, not decoration.** A closed Confluence palette — titled info/tip/warning/note panels, expands, two- and three-column layouts, task lists, status lozenges, dates, emoticons, embeds, code/math/diagram macros and a raw-storage escape hatch — with a container-ladder rule, lint budgets and an unknown-macro fail-closed. See the Step 2b palette, the catalogue in guide 04 and the [format showcase](./assets/examples/confluence-format-showcase.md).
 - **Twelve disciplines, one contract.** Each guide follows the same 10-section standard and composes with the others through an explicit, symmetric combination matrix.
 - **No credentials required to start.** Authoring, linting and conversion work offline. Only the final read/write needs an Atlassian API token.
 
@@ -37,6 +38,12 @@ The skill is built for the documents enterprises actually run on: functional des
 # See a passing contract: the completed Vietnamese example scores 100.
 python3 scripts/validate_document.py assets/examples/fds-payment-refund.vi.md \
   --profile fds-vi --min-score 85 --publish
+
+# See every supported Confluence display container in one page.
+python3 scripts/validate_document.py assets/examples/confluence-format-showcase.md \
+  --profile generic --min-score 90 --publish
+python3 scripts/md2storage.py assets/examples/confluence-format-showcase.md \
+  -o showcase.storage.html --check
 
 # Start a new document from a template, fill every placeholder, then lint.
 cp assets/templates/fds.vi.md refund-fds.vi.md
@@ -98,6 +105,8 @@ Claude Code global install:
 ln -s "$(pwd)" ~/.claude/skills/confluence-documents
 ```
 
+Note: hosts that validate the skill name against the folder name expect the folder **`confluence-documents`** — the frontmatter `name`. Cloning the repository directly into the skills directory as `skill-confluence-documents` will not be discovered; symlink or rename the folder instead.
+
 The scripts stay host-independent: Python 3.11+ standard library only, invoked from a shell. Copilot in plain chat mode cannot execute them; authoring and linting then remain manual.
 
 ## 🧩 Templates and Profiles
@@ -113,6 +122,25 @@ The scripts stay host-independent: Python 3.11+ standard library only, invoked f
 | [`postmortem.md`](./assets/templates/postmortem.md) | Incident Postmortem | English | `postmortem` | 8 |
 | [`adr.md`](./assets/templates/adr.md) | Architecture Decision Record | English | `adr` | 6 |
 | [`fds-payment-refund.vi.md`](./assets/examples/fds-payment-refund.vi.md) | Completed reference FDS | Vietnamese | `fds-vi` | 12 + phụ lục |
+| [`confluence-format-showcase.md`](./assets/examples/confluence-format-showcase.md) | Worked display-format reference | English | `generic` | 11 |
+
+## 🎛 Confluence Display Formats
+
+The skill chooses containers from a closed palette instead of inventing styling. Rule of thumb — the container ladder: **table → titled callout → titled expand → columns → task list → embed → raw storage fence**.
+
+| Syntax | What it becomes on Confluence |
+|---|---|
+| `:::info Title` / `:::tip` / `:::warning` / `:::note` | Highlighted panel with a title (at most five per page) |
+| `:::panel Title` / `:::expand Title` | Neutral panel / collapsible depth for long evidence |
+| `:::columns` … `||` … `:::` | Two- or three-column layout section |
+| `- [ ] item` / `- [x] done` | Task list that survives export and review |
+| `{{status:green\|Approved}}`, `{{date:2026-11-19}}`, `{{jira:PAY-123}}`, `{{emoji:thumbs-up}}` | Status lozenge, locale-rendered date, live issue chip, emoticon |
+| `{{embed:https://…}}` | Media embed (video, board, dashboard) |
+| ` ```json title="file.json" `, ` ```math `, ` ```mermaid ` | Code macro with language and title, formula, diagram |
+| `{{toc}}`, `{{children}}`, `{{include:SPACE:Title}}`, `{{anchor:id}}` | Structure helpers |
+| ` ```storage ` | Reviewed raw XHTML escape hatch for anything exotic |
+
+Unknown macros and directives fail closed at lint (`format.directive-unknown`, `format.macro-unknown`, `format.expand-untitled`, `format.callout-budget`) and again at conversion. Full catalogue: Example 0 in [guide 04](./skills/04-storage-format/SKILL.md); everything rendered live in [assets/examples/confluence-format-showcase.md](./assets/examples/confluence-format-showcase.md).
 
 ## 🔄 Combination Matrix
 
@@ -149,8 +177,11 @@ It verifies:
 4. The combination matrix is symmetric and matches the README.
 5. Every template converts to well-formed storage XHTML.
 6. The completed Vietnamese example scores at least 85 with `--profile fds-vi --publish`.
-7. Repository hygiene: no secrets, no `.env`, no generated storage or backup directories committed.
-8. Host adapters exist for Claude Code, GitHub Copilot, Cline and generic agents, and each points back to `SKILL.md`.
+7. The format showcase converts cleanly and scores at least 90 with `--profile generic --publish`.
+8. Host adapters exist for Claude Code, GitHub Copilot, Cline and generic agents, each points back to `SKILL.md`, and their routing tables carry the same (template, lint profile) pairs as the router.
+9. Repository hygiene: no secrets, no `.env`, no generated storage or backup directories committed.
+
+`scripts/test_confluence.py` additionally runs offline regression tests for the publishing CLI: credential parsing and aliases, fail-closed exits, env-file loading, version messages, backups, hashing, error hints, and `create --dry-run` without any network access.
 
 The GitHub Actions workflow in [`.github/workflows/validate.yml`](./.github/workflows/validate.yml) runs the same gates on every push and pull request.
 
@@ -180,6 +211,7 @@ skill-confluence-documents/
 │   ├── md2storage.py            # Markdown → Confluence storage XHTML
 │   ├── validate_document.py     # Document formatting and quality linter
 │   ├── confluence.py            # Safe Confluence Cloud API CLI
+│   ├── test_confluence.py       # Offline regression tests for the CLI
 │   └── validate_skills.py       # Repository CI contract
 ├── plan/readme.md               # Design decisions and quality gates
 ├── .env.example

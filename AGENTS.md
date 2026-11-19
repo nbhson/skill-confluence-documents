@@ -32,7 +32,7 @@ Guide numbers map to `skills/01-document-architecture/` through `skills/12-autom
 
 1. **Classify** the request using the table above. For an update, classify from the live page, not from the new request.
 2. **Copy** the template into the working directory; never edit `assets/templates/` in place.
-3. **Author** frontmatter first: real title, `doc_id`, version, status, owner, reviewers, Jira key, space, labels, classification, `updated`. Use explicit placeholders and status `Draft` when facts are missing.
+3. **Author** frontmatter first: real title, `doc_id`, version, status, owner, reviewers, Jira key, space, labels, classification, `updated`. Use explicit placeholders and status `Draft` when facts are missing. Choose display containers from the Step 2b palette in `SKILL.md`.
 4. **Lint** with the matching profile and `--publish`; fix every error and review every warning.
 5. **Convert** to storage XHTML and require a well-formed fragment.
 6. **Publish** only through the safe protocol below. Dry-run creates; read, diff and back up updates.
@@ -54,6 +54,7 @@ python3 scripts/confluence.py --env-file .env verify --page-id 12345 --file .wor
 ## Non-negotiables
 
 - **Tables over bullets.** Three or more parallel facts become a table with a stable ID column. No section may be bullets-only.
+- **Format is a decision.** Pick display containers from the Step 2b palette in `SKILL.md` (callouts, expands, columns, task lists, embeds, macros); title every callout and expand, at most five callouts per page, unknown macros fail closed.
 - **Answer first.** Each H2 opens with one or two sentences stating the conclusion.
 - **Numbered, shallow structure.** Six to twelve H2 sections, depth at most H3, appendices lettered.
 - **Status is text plus colour.** Use the controlled vocabulary `Draft`, `In Review`, `Approved`, `Deprecated`, `Superseded`.

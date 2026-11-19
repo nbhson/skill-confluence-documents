@@ -10,8 +10,12 @@ Checks the structure that makes this repository usable as an agent skill:
 5. The 12x12 README combination matrix matches `data.json`.
 6. Every template converts to well-formed Confluence storage XHTML.
 7. The completed Vietnamese example passes the publication lint at >= 85.
-8. Root router, references, glossary, plan, CI, environment example and licence exist.
-9. No secrets, generated storage, backups or cache directories in the tree.
+8. The format showcase converts and lints clean at profile `generic --publish`.
+9. Root router, references, glossary, plan, CI, environment example and licence exist.
+10. Host adapters exist for Claude Code, GitHub Copilot, Cline and generic agents,
+    point back to `SKILL.md`, and their routing tables carry the same
+    (template, lint profile) pairs as the router's Step 0 table.
+11. No secrets, generated storage, backups or cache directories in the tree.
 
 Usage:
     python3 scripts/validate_skills.py
@@ -386,6 +390,69 @@ def check_example() -> None:
     ok(f"example score: {score}/100 ({grade})")
 
 
+def routing_pairs(text: str) -> set[tuple[str, str]]:
+    """Collect (template cell, following cell) pairs from Markdown routing tables."""
+    pairs: set[tuple[str, str]] = set()
+    for line in text.splitlines():
+        if "assets/templates/" not in line or "|" not in line:
+            continue
+        cells = [
+            cell.strip().replace("`", "").strip()
+            for cell in line.strip().strip("|").split("|")
+        ]
+        for position, cell in enumerate(cells):
+            if cell.startswith("assets/templates/") and position + 1 < len(cells):
+                pairs.add((cell, cells[position + 1]))
+                break
+    return pairs
+
+
+def check_adapters_routing() -> None:
+    """Adapter routing tables must carry exactly the router's (template, profile) pairs."""
+    router = ROOT / "SKILL.md"
+    if not router.exists():
+        fail("SKILL.md present for routing parity check")
+        return
+    expected = routing_pairs(router.read_text(encoding="utf-8"))
+    check(len(expected) >= 8, f"router Step 0 table has >= 8 template rows (found {len(expected)})")
+    adapters = [
+        ROOT / "AGENTS.md",
+        ROOT / ".github" / "copilot-instructions.md",
+        ROOT / ".clinerules" / "confluence-documents.md",
+    ]
+    for adapter in adapters:
+        if not adapter.exists():
+            fail(f"{adapter.relative_to(ROOT)} present for routing parity check")
+            continue
+        actual = routing_pairs(adapter.read_text(encoding="utf-8"))
+        drift = expected ^ actual
+        check(
+            actual == expected,
+            f"{adapter.relative_to(ROOT)}: routing table matches SKILL.md "
+            f"({'ok' if not drift else 'drift: ' + repr(sorted(drift))})",
+        )
+
+
+def check_showcase() -> None:
+    showcase = ROOT / "assets" / "examples" / "confluence-format-showcase.md"
+    if not showcase.exists():
+        fail("format showcase example exists")
+        return
+    text = showcase.read_text(encoding="utf-8")
+    try:
+        result = convert(text)
+        check(len(result["storage"]) > 5_000, "showcase converts to substantive storage XHTML")
+    except ConversionError as exc:
+        fail(f"showcase converts to storage ({exc})")
+    linter = Linter(showcase, text, "generic", publish=True, allow_placeholders=False, config={})
+    findings = linter.run()
+    score, grade = linter.score()
+    errors = [finding for finding in findings if finding.level == "error"]
+    check(not errors, f"showcase has no publication errors (found {len(errors)})")
+    check(score >= 90, f"showcase scores >= 90 with --profile generic --publish (score {score}, {grade})")
+    ok(f"showcase score: {score}/100 ({grade})")
+
+
 def check_assets() -> None:
     required = [
         ROOT / "SKILL.md",
@@ -397,6 +464,7 @@ def check_assets() -> None:
         ROOT / "plan" / "readme.md",
         ROOT / "skills" / "assets" / "references.md",
         ROOT / "assets" / "terminology" / "vi-en-glossary.md",
+        ROOT / "assets" / "examples" / "confluence-format-showcase.md",
         ROOT / ".env.example",
         ROOT / ".gitignore",
         ROOT / "LICENSE",
@@ -404,6 +472,7 @@ def check_assets() -> None:
         ROOT / "scripts" / "md2storage.py",
         ROOT / "scripts" / "confluence.py",
         ROOT / "scripts" / "validate_document.py",
+        ROOT / "scripts" / "test_confluence.py",
     ]
     for path in required:
         check(path.exists(), f"{path.relative_to(ROOT)} exists")
@@ -472,7 +541,9 @@ def main(argv: list[str] | None = None) -> int:
             check_readme_matrix(data)
         check_templates()
         check_example()
+        check_showcase()
         check_assets()
+        check_adapters_routing()
         check_hygiene()
     except Exception as exc:  # noqa: BLE001 - the contract check must not crash silently
         print(f"ERROR: {exc}", file=sys.stderr)

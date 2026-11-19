@@ -2,9 +2,10 @@
 """md2storage.py - convert enterprise Markdown into Confluence Cloud storage XHTML.
 
 The dialect is intentionally small and reviewable. It covers the containers a
-professional specification needs (panels, status lozenges, Jira links, tables,
-code, task lists, expandable detail) and refuses unknown macros so a typo never
-publishes as literal text.
+professional specification needs (info/tip/warning/note panels with titles,
+status lozenges, expandable detail, two- and three-column layouts, Jira links,
+tables, code, math, task lists, dates, emoticons and media embeds) and refuses
+unknown macros so a typo never publishes as literal text.
 
 Usage:
     python3 md2storage.py input.md -o page.storage.html --check
@@ -63,6 +64,23 @@ CALLOUT_MACROS = {
     "quote": "quote",
 }
 
+# Inline macros accepted inside {{...}} and their argument contract. Kept in one
+# place so the linter and the error hints list the same catalogue the converter
+# actually supports.
+SUPPORTED_INLINE_MACROS = {
+    "status": "colour|Label",
+    "jira": "ISSUE-123",
+    "toc": "[2-6]",
+    "children": "",
+    "include": "[SPACE:]Page title",
+    "anchor": "name",
+    "meta": "",
+    "mermaid": "(prefer a fenced mermaid block)",
+    "date": "YYYY-MM-DD",
+    "emoji": "smile",
+    "embed": "https://url",
+}
+
 HEADING_RE = re.compile(
     r"^(#{1,6})\s+(.*?)(?:\s+\{#([A-Za-z0-9][A-Za-z0-9_-]*)\})?\s*$"
 )
@@ -73,6 +91,9 @@ LIST_RE = re.compile(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$")
 TABLE_SEP_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$")
 TABLE_SINGLE_SEP_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*\|?\s*$")
 TASK_RE = re.compile(r"^\[( |x|X)\]\s+(.*)$")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?$")
+EMOJI_RE = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
+URL_RE = re.compile(r"^https?://\S+$")
 LINK_RE = re.compile(
     r"""
     (?P<macro>\{\{[^{}\n]+\}\})
@@ -350,11 +371,42 @@ class InlineRenderer:
             if not argument:
                 raise ConversionError("mermaid macro needs a diagram body, use a fenced block")
             return self._mermaid(argument)
+        if name == "date":
+            if not DATE_RE.match(argument):
+                raise ConversionError(
+                    f"date macro needs an ISO date, found {argument!r}: "
+                    "{{date:2026-11-19}}"
+                )
+            moment = argument.replace(" ", "T")
+            if len(moment) == 10:
+                moment += "T00:00:00"
+            elif len(moment) == 16:
+                moment += ":00"
+            return f'<time datetime="{esc_attr(moment)}.000Z" />'
+        if name == "emoji":
+            if not EMOJI_RE.match(argument):
+                raise ConversionError(
+                    f"emoji name must be lowercase like 'thumbs-up', found {argument!r}"
+                )
+            return f'<ac:emoticon ac:name="{esc_attr(argument)}" />'
+        if name == "embed":
+            if not URL_RE.match(argument):
+                raise ConversionError(
+                    f"embed macro needs an absolute http(s) URL, found {argument!r}"
+                )
+            return (
+                '<ac:structured-macro ac:name="embed">'
+                f'<ac:parameter ac:name="url"><ri:url ri:value="{esc_attr(argument)}" /></ac:parameter>'
+                "</ac:structured-macro>"
+            )
         if self.lenient:
             return esc_text(raw)
+        catalogue = ", ".join(sorted(SUPPORTED_INLINE_MACROS))
         raise ConversionError(
-            f"unknown macro '{{{{{expression}}}}}'. "
-            "Use a fenced 'storage' block for raw XHTML or --lenient to keep it literal."
+            f"unknown macro '{{{{{expression}}}}}'. Supported inline macros: {catalogue}. "
+            "Block containers use ':::' directives (info, note, tip, warning, panel, "
+            "expand, columns, quote). For anything else use a fenced 'storage' block "
+            "or --lenient to keep it literal."
         )
 
     def _status(self, colour: str, label: str) -> str:
@@ -657,9 +709,12 @@ class Converter:
     def _consume_directive(
         self, lines: list[str], index: int, name: str, argument: str
     ) -> tuple[str, int]:
+        if name == "columns":
+            return self._consume_columns(lines, index)
         if name not in CALLOUT_MACROS:
             raise ConversionError(
-                f"unknown directive ':::{name}'. Supported: {', '.join(sorted(CALLOUT_MACROS))}"
+                f"unknown directive ':::{name}'. Supported: "
+                f"{', '.join(sorted(set(CALLOUT_MACROS) | {'columns'}))}"
             )
 
         depth = 1
@@ -707,11 +762,61 @@ class Converter:
                 f"<ac:rich-text-body>{body}</ac:rich-text-body>"
                 "</ac:structured-macro>"
             ), index
+        # info, note, tip and warning accept the same optional title parameter.
+        title = (
+            f'<ac:parameter ac:name="title">{esc_text(argument)}</ac:parameter>'
+            if argument
+            else ""
+        )
         return (
-            f'<ac:structured-macro ac:name="{macro}">'
+            f'<ac:structured-macro ac:name="{macro}">{title}'
             f"<ac:rich-text-body>{body}</ac:rich-text-body>"
             "</ac:structured-macro>"
         ), index
+
+    def _consume_columns(self, lines: list[str], index: int) -> tuple[str, int]:
+        """Render ':::columns' as a Confluence layout section.
+
+        Cells are separated by lines containing only '||'. Two or three cells
+        map to two_equal / three_equal; other counts fail closed because a
+        layout section in Confluence Cloud holds at most three equal cells.
+        """
+        cells: list[list[str]] = [[]]
+        index += 1
+        closed = False
+        depth = 0
+        while index < len(lines):
+            line = lines[index]
+            if DIRECTIVE_RE.match(line):
+                depth += 1
+            elif DIRECTIVE_END_RE.match(line):
+                if depth == 0:
+                    index += 1
+                    closed = True
+                    break
+                depth -= 1
+            elif depth == 0 and line.strip() == "||":
+                cells.append([])
+                index += 1
+                continue
+            cells[-1].append(line)
+            index += 1
+        if not closed:
+            raise ConversionError("unterminated directive ':::columns'")
+        if len(cells) not in (2, 3):
+            raise ConversionError(
+                f"':::columns' needs 2 or 3 cells separated by '||' lines (found {len(cells)})"
+            )
+        layout_type = "two_equal" if len(cells) == 2 else "three_equal"
+        rendered = "".join(
+            f"<ac:layout-cell>{self.render(cell, nested=True)}</ac:layout-cell>"
+            for cell in cells
+        )
+        return (
+            f'<ac:layout><ac:layout-section ac:type="{layout_type}">{rendered}'
+            "</ac:layout-section></ac:layout>",
+            index,
+        )
 
     @staticmethod
     def _is_table_start(lines: list[str], index: int) -> bool:

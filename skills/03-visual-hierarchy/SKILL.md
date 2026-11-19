@@ -17,6 +17,7 @@ Visual hierarchy is the deliberate use of paragraphs, tables, panels, status loz
 - **Table when parallel, prose when causal:** three or more comparable facts become a table; a chain of reasoning stays a paragraph.
 - **Bullets are the exception:** use them for short sequences, never as the default container for requirements, risks or options.
 - **One callout per decision:** a panel marks a decision, warning or constraint; if every paragraph is in a panel, none stands out.
+- **Format follows content, and choosing it is a decision:** walk the container ladder — table for parallel facts, callout for exceptions, expand for long evidence, columns for side-by-side, task list for owned work, embed for media — and stop at the first container that fits.
 - **Status is text plus colour:** `{{status:green|Approved}}`, never a green cell without a label.
 - **Depth is collapsible:** long evidence moves into `:::expand`, keeping the main path short.
 - **Whitespace is structure:** one idea per section; split before the page becomes a scroll marathon.
@@ -33,6 +34,9 @@ Visual hierarchy is the deliberate use of paragraphs, tables, panels, status loz
 | Paragraph budget | `--doc-paragraph-words` | `180` | Longer paragraphs split or move to an expand |
 | Section lede | `--doc-section-lede` | `1–2 sentences` | Before any list or table |
 | Callout budget | `--doc-callout-budget` | `1 per section` | More than one competes for attention |
+| Callout page budget | `--doc-callout-page-budget` | `≤ 5` | The linter warns above this count |
+| Container ladder | `--doc-container-ladder` | `table → callout → expand → columns → task → embed → raw storage` | Pick the first container that fits |
+| Expand title | `--doc-expand-title` | `required` | Untitled expands fail the lint budget |
 | Status colours | `--doc-status-colours` | `Grey, Yellow, Green, Red, Purple` | Text label is mandatory |
 | Code language | `--doc-code-language` | `required` | Enables syntax highlighting |
 | Table columns | `--doc-table-columns` | `≤ 8` | Ten is the hard ceiling |
@@ -52,6 +56,9 @@ Visual hierarchy is the deliberate use of paragraphs, tables, panels, status loz
 - **Do/Don't table:** two columns, one behaviour per row; the fastest way to remove ambiguity.
 - **Progressive disclosure:** summary table in the body, full schema or test evidence in `:::expand`.
 - **Before/after table:** legacy behaviour versus new behaviour, with a verification column.
+- **Titled callout:** `:::warning Refund window` — colour plus a name the reader can cite; untitled callouts are decoration.
+- **Two-column decision frame:** `:::columns` with a `||` separator places the decision beside its counter-evidence, not two screens apart.
+- **Owned checklist:** action items with owners and dates become task lists (`- [ ]`), so completion state survives export and review.
 
 ## 6. Real-World Use Cases
 
@@ -81,6 +88,8 @@ Visual hierarchy is the deliberate use of paragraphs, tables, panels, status loz
 - **Rainbow status colours with no legend or text** — meaning lost in greyscale and for colour-blind readers
 - **Four levels of nested bullets** — the reader cannot reconstruct the hierarchy
 - **Tables used as page layout rather than data** — breaks reflow, zoom and screen readers
+- **Callout spam** — a page of coloured boxes where every paragraph is highlighted and no exception stands out
+- **Untitled expand as a hiding place** — content nobody can find by scanning, cite from Jira or approve
 - **Screenshots of text instead of selectable content** — unsearchable, untranslatable, inaccessible
 
 ### Accessibility Notes
@@ -144,4 +153,5 @@ python3 scripts/validate_document.py fds.md --profile fds --min-score 90
 - [ ] At most one decision panel per section, with owner and deadline.
 - [ ] Status always includes a text label, not only a colour.
 - [ ] Long evidence is in an expand; mandatory criteria stay in the body.
+- [ ] Callouts stay at five or fewer per page and every expand and callout has a title.
 - [ ] The page is readable at 200% zoom and in greyscale.

@@ -308,6 +308,7 @@
           "**Table when parallel, prose when causal:** three or more comparable facts become a table; a chain of reasoning stays a paragraph.",
           "**Bullets are the exception:** use them for short sequences, never as the default container for requirements, risks or options.",
           "**One callout per decision:** a panel marks a decision, warning or constraint; if every paragraph is in a panel, none stands out.",
+          "**Format follows content, and choosing it is a decision:** walk the container ladder — table for parallel facts, callout for exceptions, expand for long evidence, columns for side-by-side, task list for owned work, embed for media — and stop at the first container that fits.",
           "**Status is text plus colour:** `{{status:green|Approved}}`, never a green cell without a label.",
           "**Depth is collapsible:** long evidence moves into `:::expand`, keeping the main path short.",
           "**Whitespace is structure:** one idea per section; split before the page becomes a scroll marathon.",
@@ -357,6 +358,24 @@
             "notes": "More than one competes for attention"
           },
           {
+            "role": "Callout page budget",
+            "token": "--doc-callout-page-budget",
+            "value": "≤ 5",
+            "notes": "The linter warns above this count"
+          },
+          {
+            "role": "Container ladder",
+            "token": "--doc-container-ladder",
+            "value": "table → callout → expand → columns → task → embed → raw storage",
+            "notes": "Pick the first container that fits"
+          },
+          {
+            "role": "Expand title",
+            "token": "--doc-expand-title",
+            "value": "required",
+            "notes": "Untitled expands fail the lint budget"
+          },
+          {
             "role": "Status colours",
             "token": "--doc-status-colours",
             "value": "Grey, Yellow, Green, Red, Purple",
@@ -387,7 +406,10 @@
           "**Risk table:** ID, risk, likelihood, impact, mitigation, owner, status — never a bulleted risk list.",
           "**Do/Don't table:** two columns, one behaviour per row; the fastest way to remove ambiguity.",
           "**Progressive disclosure:** summary table in the body, full schema or test evidence in `:::expand`.",
-          "**Before/after table:** legacy behaviour versus new behaviour, with a verification column."
+          "**Before/after table:** legacy behaviour versus new behaviour, with a verification column.",
+          "**Titled callout:** `:::warning Refund window` — colour plus a name the reader can cite; untitled callouts are decoration.",
+          "**Two-column decision frame:** `:::columns` with a `||` separator places the decision beside its counter-evidence, not two screens apart.",
+          "**Owned checklist:** action items with owners and dates become task lists (`- [ ]`), so completion state survives export and review."
         ],
         "useCases": [
           "**FDS review** — reviewers scan the requirement table, open one detail section, and sign the change log.",
@@ -418,6 +440,8 @@
           "**Rainbow status colours with no legend or text** — meaning lost in greyscale and for colour-blind readers",
           "**Four levels of nested bullets** — the reader cannot reconstruct the hierarchy",
           "**Tables used as page layout rather than data** — breaks reflow, zoom and screen readers",
+          "**Callout spam** — a page of coloured boxes where every paragraph is highlighted and no exception stands out",
+          "**Untitled expand as a hiding place** — content nobody can find by scanning, cite from Jira or approve",
           "**Screenshots of text instead of selectable content** — unsearchable, untranslatable, inaccessible"
         ],
         "accessibility": {
@@ -458,19 +482,19 @@
           {
             "role": "Allowed block tags",
             "token": "--storage-block-tags",
-            "value": "h1–h6, p, ul, ol, li, table, thead, tbody, tr, th, td, blockquote, hr, pre",
+            "value": "h1–h6, p, ul, ol, li, table, thead, tbody, tr, th, td, blockquote, hr, pre, ac:layout(+section/cell)",
             "notes": "No div/span styling"
           },
           {
             "role": "Allowed inline tags",
             "token": "--storage-inline-tags",
-            "value": "strong, em, del, code, a, br",
+            "value": "strong, em, del, code, a, br, time, ac:emoticon",
             "notes": "No font/size tags"
           },
           {
             "role": "Macro allowlist",
             "token": "--storage-macros",
-            "value": "info, note, tip, warning, panel, expand, status, jira, toc, anchor, code, children, include",
+            "value": "info, note, tip, warning, panel, expand, status, jira, toc, anchor, code, children, include, embed, mermaid, plantuml",
             "notes": "Confirm tenant-specific apps"
           },
           {
@@ -523,7 +547,9 @@
           "**Expand:** optional title, rich-text body; detail only, never mandatory criteria.",
           "**Code block:** language parameter plus `ac:plain-text-body` in CDATA.",
           "**Anchor:** unnamed parameter carrying the anchor slug, placed inside the heading.",
-          "**Attachment image:** `ac:image` with `ac:alt` and `ri:attachment ri:filename`."
+          "**Attachment image:** `ac:image` with `ac:alt` and `ri:attachment ri:filename`.",
+          "**Layout columns:** `ac:layout` with one `ac:layout-section` of type `two_equal` or `three_equal`; data belongs in tables, columns carry prose side by side.",
+          "**Time element:** `{{date:...}}` emits `<time datetime=\"...Z\" />`, so dates stay locale-rendered and sortable."
         ],
         "useCases": [
           "**API-generated release notes** — deterministic storage from a template, validated before every publish.",
@@ -1593,6 +1619,8 @@
           "**Secrets stay in the environment:** tokens are read from env vars or a local `.env`, never committed or pasted into a prompt.",
           "**Drift is detected on a schedule:** CQL audits find orphaned, stale and unlabelled pages before an auditor does.",
           "**Fail closed:** unknown macros, malformed storage and missing credentials stop the run.",
+          "**Containers are judged before conversion:** lint rules catch unknown directives and macros, untitled expands and callout-budget breaks while they are still cheap to fix.",
+          "**Adapters follow the router:** host adapters' routing tables are contract-checked against the router's (template, lint profile) pairs so copies cannot drift.",
           "**Templates and examples version together:** a scaffold change is not done until the reference example still passes."
         ],
         "tokens": [

@@ -24,6 +24,8 @@ Documentation automation is the reproducible path from a reviewed Markdown sourc
 - **Secrets stay in the environment:** tokens are read from env vars or a local `.env`, never committed or pasted into a prompt.
 - **Drift is detected on a schedule:** CQL audits find orphaned, stale and unlabelled pages before an auditor does.
 - **Fail closed:** unknown macros, malformed storage and missing credentials stop the run.
+- **Containers are judged before conversion:** lint rules catch unknown directives and macros, untitled expands and callout-budget breaks while they are still cheap to fix.
+- **Adapters follow the router:** host adapters' routing tables are contract-checked against the router's (template, lint profile) pairs so copies cannot drift.
 - **Templates and examples version together:** a scaffold change is not done until the reference example still passes.
 
 ## 3. Spec Tokens
@@ -121,12 +123,15 @@ jobs:
           python-version: "3.12"
       - name: Repository contract
         run: python3 scripts/validate_skills.py
+      - name: Confluence CLI offline tests
+        run: python3 scripts/test_confluence.py
       - name: Lint every changed document
         run: |
           for file in $(git diff --name-only origin/main...HEAD -- '*.md'); do
             case "$file" in
               assets/templates/*) profile=generic ;;
-              assets/examples/*) profile=fds-vi ;;
+              assets/examples/fds-payment-refund.vi.md) profile=fds-vi ;;
+              assets/examples/*) profile=generic ;;
               *) profile=fds ;;
             esac
             python3 scripts/validate_document.py "$file" --profile "$profile" --min-score 90
@@ -139,6 +144,9 @@ jobs:
       - name: Validate the completed example
         run: python3 scripts/validate_document.py assets/examples/fds-payment-refund.vi.md \
           --profile fds-vi --min-score 85 --publish
+      - name: Validate the format showcase
+        run: python3 scripts/validate_document.py assets/examples/confluence-format-showcase.md \
+          --profile generic --min-score 90 --publish
 ```
 
 ### Example 2 — Idempotent publish with verification

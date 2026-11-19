@@ -32,6 +32,7 @@ from md2storage import (  # noqa: E402
     FENCE_RE,
     HEADING_RE,
     LIST_RE,
+    SUPPORTED_INLINE_MACROS,
     TABLE_SEP_RE,
     TABLE_SINGLE_SEP_RE,
     frontmatter_list,
@@ -313,6 +314,7 @@ class Linter:
         self.check_required_sections()
         self.check_change_log()
         self.check_formatting()
+        self.check_display_formats()
         self.check_tables()
         self.check_content()
         self.check_links_and_images()
@@ -689,6 +691,77 @@ class Linter:
 
         self._check_paragraphs()
         self._check_heading_case()
+
+    # -- display containers ( ::: directives and {{macro}} ) --------------- #
+
+    CALLOUT_NAMES = {"info", "note", "tip", "warning", "caution", "panel", "quote"}
+    CALLOUT_BUDGET = 5
+
+    def check_display_formats(self) -> None:
+        """Judge the choice of Confluence display formats, before conversion.
+
+        Containers are decisions, not decoration: an unknown directive is a
+        conversion failure waiting to happen, an untitled expand is unusable,
+        and a page full of coloured panels has lost its visual hierarchy.
+        """
+        callouts = 0
+        for index, line in self.visible_lines():
+            match = DIRECTIVE_RE.match(line.strip())
+            if not match:
+                continue
+            name = match.group(1).lower()
+            argument = (match.group(2) or "").strip()
+            if name in ("expand", "details"):
+                if not argument:
+                    self.add(
+                        "warn",
+                        "format.expand-untitled",
+                        self.model.line_no(index),
+                        "':::expand' has no title; readers cannot tell what is inside.",
+                        "Give every expand a noun-phrase title, for example "
+                        "':::expand Full payload example'.",
+                    )
+            elif name == "columns":
+                continue
+            elif name in self.CALLOUT_NAMES:
+                callouts += 1
+            else:
+                self.add(
+                    "error",
+                    "format.directive-unknown",
+                    self.model.line_no(index),
+                    f"Unknown directive ':::{name}'.",
+                    "Supported: info, note, tip, warning, caution, panel, expand, "
+                    "details, quote, columns. Guide 04 lists the full format catalogue.",
+                )
+        if callouts > self.CALLOUT_BUDGET:
+            self.add(
+                "warn",
+                "format.callout-budget",
+                None,
+                f"{callouts} highlighted containers on one page; panels are seasoning, not structure.",
+                "Keep callouts for exceptions, risks and decisions; convert the rest "
+                "into tables or plain prose.",
+            )
+
+        for index, line in self.visible_lines():
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue  # headings describe the catalogue, not a defect
+            for macro_match in re.finditer(r"\{\{([^{}\n]+)\}\}", line):
+                expression = macro_match.group(1)
+                name = expression.partition(":")[0].strip().lower()
+                if not name or name in SUPPORTED_INLINE_MACROS:
+                    continue
+                self.add(
+                    "warn",
+                    "format.macro-unknown",
+                    self.model.line_no(index),
+                    f"Unknown inline macro '{{{{{expression.strip()}}}}}'.",
+                    "Supported macros: "
+                    + ", ".join(sorted(SUPPORTED_INLINE_MACROS))
+                    + ". For raw storage use a fenced 'storage' block.",
+                )
 
     def section_stats(self, section: Section) -> dict[str, Any]:
         table_lines = {

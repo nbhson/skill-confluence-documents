@@ -26,9 +26,9 @@ Confluence stores page bodies as *storage format*: an XHTML fragment with `ac:` 
 
 | Role | Token | Value | Notes |
 |---|---|---|---|
-| Allowed block tags | `--storage-block-tags` | `h1–h6, p, ul, ol, li, table, thead, tbody, tr, th, td, blockquote, hr, pre` | No div/span styling |
-| Allowed inline tags | `--storage-inline-tags` | `strong, em, del, code, a, br` | No font/size tags |
-| Macro allowlist | `--storage-macros` | `info, note, tip, warning, panel, expand, status, jira, toc, anchor, code, children, include` | Confirm tenant-specific apps |
+| Allowed block tags | `--storage-block-tags` | `h1–h6, p, ul, ol, li, table, thead, tbody, tr, th, td, blockquote, hr, pre, ac:layout(+section/cell)` | No div/span styling |
+| Allowed inline tags | `--storage-inline-tags` | `strong, em, del, code, a, br, time, ac:emoticon` | No font/size tags |
+| Macro allowlist | `--storage-macros` | `info, note, tip, warning, panel, expand, status, jira, toc, anchor, code, children, include, embed, mermaid, plantuml` | Confirm tenant-specific apps |
 | Page budget | `--storage-page-budget` | `1 MB` | Hard warning above 2 MB |
 | Macro count | `--storage-macro-budget` | `500` | Split the page above this |
 | Table rows | `--storage-table-rows` | `500` | Move exports to attachments |
@@ -52,6 +52,8 @@ Confluence stores page bodies as *storage format*: an XHTML fragment with `ac:` 
 - **Code block:** language parameter plus `ac:plain-text-body` in CDATA.
 - **Anchor:** unnamed parameter carrying the anchor slug, placed inside the heading.
 - **Attachment image:** `ac:image` with `ac:alt` and `ri:attachment ri:filename`.
+- **Layout columns:** `ac:layout` with one `ac:layout-section` of type `two_equal` or `three_equal`; data belongs in tables, columns carry prose side by side.
+- **Time element:** `{{date:...}}` emits `<time datetime="...Z" />`, so dates stay locale-rendered and sortable.
 
 ## 6. Real-World Use Cases
 
@@ -87,6 +89,35 @@ Confluence stores page bodies as *storage format*: an XHTML fragment with `ac:` 
 Storage must carry semantics, not styling: real `<h2>`/`<h3>` elements, `<th>` for table headers, `ac:alt` on every image, descriptive link text. A `<span style="font-weight:bold">` looks like a heading to sighted readers and is invisible to assistive technology. CDATA code blocks need a language parameter so screen readers and highlighters can treat them consistently.
 
 ## 9. Code Examples
+
+### Example 0 — Format catalogue: choose the container
+
+This is the complete set `md2storage.py` accepts. Pick the **first row whose content matches**; do not invent syntax — unknown forms fail closed at conversion, and the linter flags most of them earlier.
+
+| Content situation | Markdown syntax | Storage output | Notes |
+|---|---|---|---|
+| Document control block | `{{meta}}` | two-column header table | From frontmatter; drives the 30-second test |
+| Table of contents | `{{toc}}` or `{{toc:3}}` | `toc` macro | Use from six H2 sections |
+| Status | `{{status:green\|Approved}}` | `status` macro | Controlled vocabulary, text plus colour |
+| Issue reference | `{{jira:PAY-123}}` | `jira` macro | Live status inside the page |
+| Due date | `{{date:2026-11-19}}` | `<time datetime>` | Renders in reader locale |
+| Signal icon | `{{emoji:thumbs-up}}` | `ac:emoticon` | Never the only carrier of meaning |
+| External video/board | `{{embed:https://…}}` | `embed` macro | Prefer over a bare URL sentence |
+| Section anchor | `{{anchor:fr-001}}` | `anchor` macro | Citable from Jira and other pages |
+| Child pages | `{{children}}` | `children` macro | Subpage navigation |
+| Transcluded page | `{{include:SPACE:Title}}` | `include` macro | Single source of truth stays on the owner page |
+| Exception / risk / note | `:::warning Title` … `:::` | `warning` macro + title | Also `info`, `tip`, `note`; ≤ 5 per page |
+| Highlighted box | `:::panel Title` … `:::` | `panel` macro + title | Neutral emphasis, no semantic colour |
+| Long evidence | `:::expand Payload sample` … `:::` | `expand` macro + title | Never mandatory criteria |
+| Side-by-side | `:::columns` … `\|\|` … `:::` | `ac:layout` two/three equal | Decision versus counter-evidence |
+| Blockquote | `> text` or `:::quote` | `blockquote` | Verbatim statements only |
+| Parallel facts | `\| ID \| … \|` | `<table>` with `<th>` | The default for three or more items |
+| Owned actions | `- [ ] item` / `- [x] item` | `ac:task-list` | Survives export and review |
+| Code or output | ` ```json title="file.json" ` | `code` macro + CDATA | Language parameter is mandatory |
+| Formula | ` ```math ` | `code` macro, language `math` | Tenant must have the math editor |
+| Diagram | ` ```mermaid ` / ` ```plantuml ` | app macro | Confirm the plugin, else table fallback |
+| Image | `![alt](attachment:flow.png)` | `ac:image` + `ri:attachment` | Alt text mandatory |
+| Raw container needed | ` ```storage ` | passthrough XHTML | Escape hatch; reviewed like code |
 
 ### Example 1 — Macro cheat sheet
 
@@ -132,6 +163,7 @@ python3 scripts/confluence.py update --page-id 12345 --file fds.storage.html \
 - [ ] `&`, `<` and `>` are escaped in text; attributes use quoted escaped values.
 - [ ] Code and diagram bodies use CDATA; `]]>` is split safely.
 - [ ] Every macro is in the allowlist; app-specific macros are confirmed in the tenant.
+- [ ] Display containers come from the Example 0 catalogue, not from invented syntax.
 - [ ] Images reference attachments with descriptive `ac:alt`; no base64.
 - [ ] No script, style, iframe or event-handler attributes.
 - [ ] The generated fragment passes `md2storage.py --check` and `confluence.py verify`.

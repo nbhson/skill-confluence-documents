@@ -410,15 +410,17 @@ class InlineRenderer:
         jira = value("jira")
         jira_html = self._jira(jira) if jira else "&mdash;"
 
+        # The "&mdash;" fallbacks are emitted raw: esc_text would double-escape the
+        # ampersand and Confluence would render the literal text "&mdash;" in the cell.
         rows = [
-            ("Document ID", esc_text(value("doc_id") or "&mdash;")),
-            ("Version", esc_text(value("version") or "&mdash;")),
+            ("Document ID", esc_text(value("doc_id")) or "&mdash;"),
+            ("Version", esc_text(value("version")) or "&mdash;"),
             ("Status", status_html),
-            ("Classification", esc_text(value("classification") or "Internal")),
-            ("Owner", esc_text(value("owner") or "&mdash;")),
-            ("Reviewers", esc_text(value("reviewers") or "&mdash;")),
+            ("Classification", esc_text(value("classification")) or "Internal"),
+            ("Owner", esc_text(value("owner")) or "&mdash;"),
+            ("Reviewers", esc_text(value("reviewers")) or "&mdash;"),
             ("Jira epic", jira_html),
-            ("Last updated", esc_text(value("updated") or "&mdash;")),
+            ("Last updated", esc_text(value("updated")) or "&mdash;"),
         ]
 
         cells: list[str] = []
